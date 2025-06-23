@@ -1,0 +1,1997 @@
+// Forçando atualização do componente - versão atualizada
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import {
+  BarChart3,
+  Users,
+  Trash2,
+  MapPin,
+  Bell,
+  Calendar,
+  UserPlus,
+  LogOut,
+  Building,
+  X,
+  Plus,
+  Leaf,
+  FileImage,
+  Youtube,
+  Edit
+} from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell } from 'recharts';
+
+// Definição de interfaces
+interface DashboardStats {
+  totalCollections: number;
+  totalUsers: number;
+  activeCollectors: number;
+  collectionPoints: number;
+}
+
+interface Schedule {
+  id: number;
+  userId: number;
+  userName: string;
+  status: string;
+  scheduledDate: string;
+  materials: string[];
+}
+
+interface CollectionPoint {
+  id: number;
+  name: string;
+  shortName?: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  schedule?: string;
+  phone?: string;
+  website?: string;
+  whatsapp?: string;
+  description?: string;
+  isActive: boolean;
+  createdAt?: string;
+  createdBy?: number;
+  materials: string[];
+  acceptedMaterials?: any[];
+}
+
+interface RecycleCategory {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  youtubeUrl: string;
+  tips: string[];
+  color: string;
+}
+
+interface NotificationItem {
+  id: number;
+  message: string;
+  time: string;
+}
+
+interface ScheduleFilters {
+  status: string;
+  date: string;
+  material: string;
+}
+
+interface CollectorFilters {
+  neighborhood: string;
+  availability: string;
+}
+
+interface CollectionPointForm {
+  name: string;
+  shortName: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  schedule: string;
+  phone: string;
+  whatsapp: string;
+  website: string;
+  description: string;
+  isActive: boolean;
+  createdAt?: string;
+  createdBy?: number;
+  image?: File | null;
+  imagePreview?: string;
+  materials: {
+    papel: boolean;
+    plastico: boolean;
+    vidro: boolean;
+    metal: boolean;
+    eletronicos: boolean;
+    oleo: boolean;
+    outros: boolean;
+  };
+}
+
+interface RecycleCategoryForm {
+  title: string;
+  description: string;
+  imageUrl: string;
+  youtubeUrl: string;
+  tips: string[];
+  color: string;
+}
+
+// Dados de exemplo para os gráficos
+const monthlyData = [
+  { name: 'Jan', coletas: 45, materiais: 120 },
+  { name: 'Fev', coletas: 52, materiais: 135 },
+  { name: 'Mar', coletas: 48, materiais: 110 },
+  { name: 'Abr', coletas: 60, materiais: 150 },
+  { name: 'Mai', coletas: 55, materiais: 140 },
+  { name: 'Jun', coletas: 65, materiais: 160 },
+];
+
+const materialData = [
+  { name: 'Papel', value: 35 },
+  { name: 'Plástico', value: 25 },
+  { name: 'Vidro', value: 20 },
+  { name: 'Metal', value: 15 },
+  { name: 'Outros', value: 5 },
+];
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+export default function AdminDashboard() {
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Estados para dados do sistema
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalCollections: 0,
+    totalUsers: 0,
+    activeCollectors: 0,
+    collectionPoints: 0
+  });
+
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [collectors, setCollectors] = useState<any[]>([]);
+  const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>([]);
+  const [recycleCategories, setRecycleCategories] = useState<RecycleCategory[]>([]);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    { id: 1, message: 'Novo agendamento pendente de confirmação', time: '10 min' },
+    { id: 2, message: 'Coleta não realizada no ponto X', time: '1 hora' },
+  ]);
+
+  // Estado para os filtros
+  const [scheduleFilters, setScheduleFilters] = useState<ScheduleFilters>({
+    status: '',
+    date: '',
+    material: ''
+  });
+
+  const [collectorFilters, setCollectorFilters] = useState<CollectorFilters>({
+    neighborhood: '',
+    availability: ''
+  });
+
+  // Funções para carregar dados do sistema
+  const loadDashboardData = async () => {
+    try {
+      // Em produção, estas chamadas seriam para APIs reais
+      /*
+      const response = await fetch('http://192.168.20.116:5000/api/admin/dashboard');
+      const data = await response.json();
+      setDashboardStats(data);
+      */
+
+      // Dados simulados para demonstração
+      setDashboardStats({
+        totalCollections: 325,
+        totalUsers: 1234,
+        activeCollectors: 45,
+        collectionPoints: 28
+      });
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    }
+  };
+
+  const loadSchedules = async () => {
+    try {
+      // Em produção, aqui seria uma chamada real para API
+      /*
+      const response = await fetch('http://192.168.20.116:5000/api/admin/schedules');
+      const data = await response.json();
+      setSchedules(data);
+      */
+
+      // Dados simulados
+      setSchedules([
+        {
+          id: 1,
+          userId: 123,
+          userName: 'João Silva',
+          status: 'pendente',
+          scheduledDate: '2023-11-15',
+          materials: ['Papel', 'Plástico']
+        },
+        {
+          id: 2,
+          userId: 456,
+          userName: 'Maria Souza',
+          status: 'concluído',
+          scheduledDate: '2023-11-10',
+          materials: ['Vidro', 'Metal']
+        }
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar agendamentos:', error);
+    }
+  };
+
+  const loadCollectionPoints = async () => {
+    try {
+      console.log("Carregando pontos de coleta...");
+
+      // Fazer requisição para a API
+      const response = await fetch('/api/collection-points');
+
+      if (!response.ok) {
+        throw new Error(`Erro ao carregar pontos de coleta: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Pontos de coleta carregados:", data);
+
+      // Transformar os dados para o formato esperado pela interface
+      const formattedPoints = data.map((point: any) => {
+        // Processar materiais aceitos
+        const materials = point.acceptedMaterials
+          ? point.acceptedMaterials.map((m: any) =>
+            m.material_type.toLowerCase()
+          )
+          : [];
+
+        console.log(`Ponto ${point.id}: Materiais processados:`, materials);
+
+        return {
+          id: point.id,
+          name: point.name,
+          shortName: point.shortName,
+          address: point.address,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          schedule: point.schedule,
+          phone: point.phone,
+          whatsapp: point.whatsapp,
+          website: point.website,
+          description: point.description,
+          isActive: point.is_active !== undefined ? Boolean(point.is_active) : true,
+          createdAt: point.createdAt,
+          createdBy: point.createdBy,
+          materials: materials
+        };
+      });
+
+      console.log("Pontos de coleta formatados:", formattedPoints);
+      setCollectionPoints(formattedPoints);
+    } catch (error) {
+      console.error("Erro ao carregar pontos de coleta:", error);
+      setCollectionPoints([]);
+    }
+  };
+
+  const loadRecycleCategories = async () => {
+    try {
+      // Em produção, seria uma chamada real para API
+      /*
+      const response = await fetch('http://192.168.20.116:5000/api/recycle-categories');
+      const data = await response.json();
+      setRecycleCategories(data);
+      */
+
+      // Dados simulados
+      setRecycleCategories([
+        {
+          id: 1,
+          title: 'Papel',
+          description: 'Como reciclar papel corretamente...',
+          color: '#0088FE',
+          imageUrl: 'https://exemplo.com/papel.jpg',
+          youtubeUrl: 'dQw4w9WgXcQ',
+          tips: ['Separe por tipo', 'Remova grampos']
+        },
+        {
+          id: 2,
+          title: 'Plástico',
+          description: 'Saiba como separar e reciclar plásticos...',
+          color: '#00C49F',
+          imageUrl: 'https://exemplo.com/plastico.jpg',
+          youtubeUrl: 'dQw4w9WgXcQ',
+          tips: ['Lave as embalagens', 'Separe por tipo de plástico']
+        }
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar categorias de reciclagem:', error);
+    }
+  };
+
+  // Carrega os dados quando o componente é montado
+  useEffect(() => {
+    // Verificar problemas conhecidos
+    verifyKnownIssues();
+
+    // Carregar dados
+    loadDashboardData();
+    loadSchedules();
+    loadCollectionPoints();
+    loadRecycleCategories();
+  }, []);
+
+  // Verificar problemas conhecidos que podem estar afetando a funcionalidade
+  const verifyKnownIssues = () => {
+    console.log("=== VERIFICANDO PROBLEMAS CONHECIDOS ===");
+
+    // Removendo verificações desnecessárias e pesadas
+    console.log("=== FIM DA VERIFICAÇÃO DE PROBLEMAS ===");
+  };
+
+  // Carrega dados específicos quando a aba ativa muda
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      loadDashboardData();
+    } else if (activeTab === 'schedules') {
+      loadSchedules();
+    } else if (activeTab === 'collection-points') {
+      loadCollectionPoints();
+    } else if (activeTab === 'recycle-content') {
+      loadRecycleCategories();
+    }
+  }, [activeTab]);
+
+  // Remover interceptação de alertas e mensagens de desenvolvimento
+  useEffect(() => {
+    console.log("Painel de administração carregado com sucesso");
+    return () => { };
+  }, []);
+
+  // Estado para o modal de ponto de coleta
+  const [showModal, setShowModal] = useState(false);
+  const [collectionPoint, setCollectionPoint] = useState<CollectionPointForm>({
+    name: '',
+    shortName: '',
+    address: '',
+    latitude: '',
+    longitude: '',
+    schedule: '',
+    phone: '',
+    whatsapp: '',
+    website: '',
+    description: '',
+    isActive: true,
+    createdAt: '',
+    createdBy: undefined,
+    image: null,
+    imagePreview: undefined,
+    materials: {
+      papel: false,
+      plastico: false,
+      vidro: false,
+      metal: false,
+      eletronicos: false,
+      oleo: false,
+      outros: false
+    }
+  });
+
+  // Estado para controlar se estamos editando ou criando um ponto
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingPointId, setEditingPointId] = useState<number | null>(null);
+
+  // Função para resetar os campos do formulário
+  const resetFormFields = () => {
+    setCollectionPoint({
+      name: '',
+      shortName: '',
+      address: '',
+      latitude: '',
+      longitude: '',
+      schedule: '',
+      phone: '',
+      whatsapp: '',
+      website: '',
+      description: '',
+      isActive: true,
+      createdAt: '',
+      createdBy: undefined,
+      image: null,
+      imagePreview: undefined,
+      materials: {
+        papel: false,
+        plastico: false,
+        vidro: false,
+        metal: false,
+        eletronicos: false,
+        oleo: false,
+        outros: false
+      }
+    });
+    setIsEditing(false);
+    setEditingPointId(null);
+  };
+
+  // Função para preparar o formulário para a criação de um novo ponto
+  const handleNewPoint = () => {
+    resetFormFields();
+    setShowModal(true);
+  };
+
+  // Função para preparar o formulário para edição de um ponto existente
+  const handleEditPoint = (point: CollectionPoint) => {
+    const materialCheckboxes = {
+      papel: point.materials.includes('papel'),
+      plastico: point.materials.includes('plastico'),
+      vidro: point.materials.includes('vidro'),
+      metal: point.materials.includes('metal'),
+      eletronicos: point.materials.includes('eletronicos'),
+      oleo: point.materials.includes('oleo'),
+      outros: point.materials.includes('outros')
+    };
+
+    setCollectionPoint({
+      name: point.name,
+      shortName: point.shortName || '',
+      address: point.address,
+      latitude: String(point.latitude),
+      longitude: String(point.longitude),
+      schedule: point.schedule || '',
+      phone: point.phone || '',
+      whatsapp: point.whatsapp || '',
+      website: point.website || '',
+      description: point.description || '',
+      isActive: point.isActive,
+      createdAt: point.createdAt || '',
+      createdBy: point.createdBy,
+      image: null,
+      imagePreview: undefined,
+      materials: materialCheckboxes
+    });
+
+    setIsEditing(true);
+    setEditingPointId(point.id);
+    setShowModal(true);
+  };
+
+  // Função para fechar o modal e resetar o formulário
+  const handleCloseModal = () => {
+    setShowModal(false);
+    resetFormFields();
+  };
+
+  // Estado para o modal de categoria de reciclagem
+  const [showRecycleModal, setShowRecycleModal] = useState(false);
+  const [recycleCategory, setRecycleCategory] = useState<RecycleCategoryForm>({
+    title: '',
+    description: '',
+    imageUrl: '',
+    youtubeUrl: '',
+    tips: ['', ''],
+    color: '#6CB33F'
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target as HTMLInputElement;
+
+    if (type === 'checkbox') {
+      const { checked } = e.target as HTMLInputElement;
+      setCollectionPoint({
+        ...collectionPoint,
+        [name]: checked
+      });
+    } else {
+      setCollectionPoint({
+        ...collectionPoint,
+        [name]: value
+      });
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      // Cria uma URL temporária para preview da imagem
+      const imageUrl = URL.createObjectURL(file);
+      setCollectionPoint({
+        ...collectionPoint,
+        image: file,
+        imagePreview: imageUrl
+      });
+    }
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setCollectionPoint({
+      ...collectionPoint,
+      materials: {
+        ...collectionPoint.materials,
+        [name]: checked
+      }
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log("=== FORMULÁRIO SUBMETIDO ===");
+    console.log("Modo de edição:", isEditing ? "EDITAR" : "CRIAR");
+    console.log("ID em edição:", editingPointId);
+    console.log("Dados do formulário:", JSON.stringify(collectionPoint));
+
+    // Validar campos obrigatórios
+    if (!collectionPoint.name || !collectionPoint.address) {
+      console.error("ERRO: Campos obrigatórios não preenchidos");
+      alert('Por favor, preencha todos os campos obrigatórios');
+      return;
+    }
+
+    try {
+      // Mostrar indicador de carregamento ou desabilitar botão aqui se necessário
+
+      // Extrair lista de materiais aceitos
+      const acceptedMaterials = Object.entries(collectionPoint.materials)
+        .filter(([, isSelected]) => isSelected)
+        .map(([material]) => material);
+
+      console.log("Materiais aceitos:", acceptedMaterials);
+      console.log("Modo de edição:", isEditing ? "Editar" : "Criar", "ID:", editingPointId);
+
+      // Definir dados do ponto para enviar ao servidor
+      const pointData = {
+        name: collectionPoint.name,
+        shortName: collectionPoint.shortName,
+        address: collectionPoint.address,
+        latitude: parseFloat(collectionPoint.latitude) || 0,
+        longitude: parseFloat(collectionPoint.longitude) || 0,
+        schedule: collectionPoint.schedule,
+        phone: collectionPoint.phone,
+        whatsapp: collectionPoint.whatsapp,
+        website: collectionPoint.website,
+        description: collectionPoint.description,
+        isActive: collectionPoint.isActive,
+        createdBy: localStorage.getItem("recycleczs_current_user") ?
+          JSON.parse(localStorage.getItem("recycleczs_current_user") || '{}').id : null
+      };
+
+      console.log("Dados preparados para envio:", JSON.stringify(pointData));
+
+      // Processo para criar ou atualizar ponto
+      let pointId;
+
+      if (isEditing && editingPointId) {
+        // ATUALIZAR PONTO EXISTENTE
+        console.log(`Atualizando ponto ID ${editingPointId} via PATCH /api/collection-points/${editingPointId}`);
+
+        const updateResponse = await fetch(`/api/collection-points/${editingPointId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(pointData),
+        });
+
+        console.log("Resposta da API (status):", updateResponse.status);
+
+        if (!updateResponse.ok) {
+          let errorBody = '';
+          try {
+            errorBody = await updateResponse.text();
+          } catch (e) {
+            errorBody = 'Não foi possível ler o corpo da resposta';
+          }
+
+          console.error(`Erro na resposta HTTP: ${updateResponse.status} ${updateResponse.statusText}`);
+          console.error('Corpo da resposta:', errorBody);
+
+          throw new Error(`Erro ao atualizar: ${updateResponse.status} ${updateResponse.statusText} - ${errorBody}`);
+        }
+
+        const updatedPoint = await updateResponse.json();
+        console.log("Ponto atualizado com sucesso:", updatedPoint);
+        pointId = editingPointId;
+
+        // Remover materiais antigos
+        console.log(`Removendo materiais antigos do ponto ID ${pointId}`);
+        const materialsResponse = await fetch(`/api/collection-points/${pointId}/materials`);
+        if (materialsResponse.ok) {
+          const existingMaterials = await materialsResponse.json();
+          console.log(`${existingMaterials.length} materiais encontrados para remoção`);
+
+          // Remover cada material em sequência
+          for (const material of existingMaterials) {
+            console.log(`Removendo material ${material.material_type} (ID: ${material.id})`);
+            const deleteResult = await fetch(`/api/materials/${material.id}`, { method: 'DELETE' });
+            console.log(`Resultado da remoção: ${deleteResult.status}`);
+          }
+        } else {
+          console.error(`Erro ao buscar materiais: ${materialsResponse.status}`);
+        }
+      } else {
+        // CRIAR NOVO PONTO
+        console.log("Criando novo ponto com dados:", pointData);
+
+        const createResponse = await fetch('/api/collection-points', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(pointData),
+        });
+
+        if (!createResponse.ok) {
+          throw new Error(`Erro ao criar: ${createResponse.status} ${createResponse.statusText}`);
+        }
+
+        const newPoint = await createResponse.json();
+        console.log("Novo ponto criado com sucesso:", newPoint);
+        pointId = newPoint.id;
+      }
+
+      // Adicionar materiais para o ponto (novo ou atualizado)
+      console.log(`Adicionando ${acceptedMaterials.length} materiais para o ponto ID ${pointId}`);
+
+      for (const material of acceptedMaterials) {
+        const materialResponse = await fetch('/api/materials', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            collectionPointId: pointId,
+            materialType: material,
+            description: null
+          }),
+        });
+
+        if (materialResponse.ok) {
+          console.log(`Material ${material} adicionado com sucesso`);
+        } else {
+          console.warn(`Problema ao adicionar material ${material}: ${materialResponse.status}`);
+        }
+      }
+
+      // Fechar o modal e limpar o formulário
+      handleCloseModal();
+
+      // Recarregar lista de pontos
+      await loadCollectionPoints();
+
+      // Mensagem de sucesso
+      alert(`Ponto de coleta ${isEditing ? 'atualizado' : 'adicionado'} com sucesso!`);
+    } catch (error: any) { // Tipo explícito para o erro
+      console.error("Erro:", error);
+      alert(`Erro ao ${isEditing ? 'atualizar' : 'adicionar'} ponto de coleta: ${error.message || 'Erro desconhecido'}`);
+    }
+  };
+
+  const handleRecycleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setRecycleCategory({
+      ...recycleCategory,
+      [name]: value
+    });
+  };
+
+  const handleTipChange = (index: number, value: string) => {
+    const newTips = [...recycleCategory.tips];
+    newTips[index] = value;
+    setRecycleCategory({
+      ...recycleCategory,
+      tips: newTips
+    });
+  };
+
+  const addNewTip = () => {
+    setRecycleCategory({
+      ...recycleCategory,
+      tips: [...recycleCategory.tips, '']
+    });
+  };
+
+  const removeTip = (index: number) => {
+    const newTips = recycleCategory.tips.filter((_, i) => i !== index);
+    setRecycleCategory({
+      ...recycleCategory,
+      tips: newTips
+    });
+  };
+
+  const handleRecycleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      // Em produção, aqui seria uma chamada real para API
+      /*
+      const response = await fetch('http://192.168.20.116:5000/api/recycle-categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(recycleCategory),
+      });
+
+      if (response.ok) {
+        // Recarregar categorias
+        loadRecycleCategories();
+      } else {
+        console.error('Erro ao criar categoria:', await response.text());
+      }
+      */
+
+      console.log('Dados da categoria de reciclagem:', recycleCategory);
+
+      // Filtrar dicas vazias
+      const filteredTips = recycleCategory.tips.filter(tip => tip.trim() !== '');
+
+      // Simulando adição à lista para demonstração
+      setRecycleCategories([
+        ...recycleCategories,
+        {
+          id: recycleCategories.length + 1,
+          title: recycleCategory.title,
+          description: recycleCategory.description,
+          imageUrl: recycleCategory.imageUrl,
+          youtubeUrl: recycleCategory.youtubeUrl,
+          tips: filteredTips,
+          color: recycleCategory.color
+        }
+      ]);
+
+      // Fechando o modal após o envio
+      setShowRecycleModal(false);
+
+      // Limpando o formulário
+      setRecycleCategory({
+        title: '',
+        description: '',
+        imageUrl: '',
+        youtubeUrl: '',
+        tips: ['', ''],
+        color: '#6CB33F'
+      });
+    } catch (error) {
+      console.error('Erro ao salvar categoria de reciclagem:', error);
+    }
+  };
+
+  const handleScheduleStatusChange = async (scheduleId: number, newStatus: string) => {
+    try {
+      // Em produção, seria uma chamada real para API
+      /*
+      const response = await fetch(`http://192.168.20.116:5000/api/schedules/${scheduleId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        loadSchedules();
+      } else {
+        console.error('Erro ao atualizar status:', await response.text());
+      }
+      */
+
+      // Simulando atualização para demonstração
+      setSchedules(schedules.map(schedule => {
+        if (schedule.id === scheduleId) {
+          return { ...schedule, status: newStatus };
+        }
+        return schedule;
+      }));
+    } catch (error) {
+      console.error('Erro ao atualizar status do agendamento:', error);
+    }
+  };
+
+  const handleDeleteCollectionPoint = async (pointId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este ponto de coleta?')) return;
+
+    try {
+      console.log(`Iniciando exclusão do ponto de coleta ID ${pointId}`);
+
+      // Fazer uma requisição real para a API
+      const response = await fetch(`/api/collection-points/${pointId}`, {
+        method: 'DELETE',
+      });
+
+      console.log(`Resposta da API: Status ${response.status}`);
+
+      if (!response.ok) {
+        let errorText;
+        try {
+          // Tentar ler o corpo como JSON
+          const errorData = await response.json();
+          errorText = errorData.error || response.statusText;
+        } catch (e) {
+          // Se não for JSON, ler como texto
+          errorText = await response.text() || response.statusText;
+        }
+
+        console.error('Erro ao excluir ponto de coleta:', errorText);
+        throw new Error(`Erro ao excluir ponto de coleta: ${errorText}`);
+      }
+
+      // Atualizar a lista de pontos de coleta
+      console.log('Exclusão bem-sucedida, recarregando pontos de coleta...');
+      await loadCollectionPoints();
+
+      // Mensagem de sucesso
+      alert('Ponto de coleta excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir ponto de coleta:', error);
+      alert('Erro ao excluir ponto de coleta. Por favor, tente novamente.');
+    }
+  };
+
+  const handleDeleteRecycleCategory = async (categoryId: number) => {
+    if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
+
+    try {
+      // Em produção, seria uma chamada real para API
+      /*
+      const response = await fetch(`http://192.168.20.116:5000/api/recycle-categories/${categoryId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        loadRecycleCategories();
+      } else {
+        console.error('Erro ao excluir categoria:', await response.text());
+      }
+      */
+
+      // Simulando exclusão para demonstração
+      setRecycleCategories(recycleCategories.filter(category => category.id !== categoryId));
+    } catch (error) {
+      console.error('Erro ao excluir categoria de reciclagem:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("recycleczs_current_user");
+    setLocation("/login");
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
+        <div className="flex flex-col h-full">
+          <div className="p-4 border-b">
+            <h1 className="text-xl font-bold text-[#6CB33F]">Painel Administrativo - RecycleCZS</h1>
+            <p className="text-sm text-gray-600">Versão 1.0.1 - Atualizado em 01/05/2025</p>
+          </div>
+
+          <nav className="flex-1 p-4 space-y-2">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center w-full p-2 rounded-lg ${activeTab === 'dashboard' ? 'bg-[#6CB33F] text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              <BarChart3 className="w-5 h-5 mr-2" />
+              Dashboard
+            </button>
+
+            <button
+              onClick={() => setActiveTab('schedules')}
+              className={`flex items-center w-full p-2 rounded-lg ${activeTab === 'schedules' ? 'bg-[#6CB33F] text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              <Calendar className="w-5 h-5 mr-2" />
+              Agendamentos
+            </button>
+
+            <button
+              onClick={() => setActiveTab('collectors')}
+              className={`flex items-center w-full p-2 rounded-lg ${activeTab === 'collectors' ? 'bg-[#6CB33F] text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              <UserPlus className="w-5 h-5 mr-2" />
+              Catadores
+            </button>
+
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`flex items-center w-full p-2 rounded-lg ${activeTab === 'map' ? 'bg-[#6CB33F] text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              <MapPin className="w-5 h-5 mr-2" />
+              Mapa
+            </button>
+
+            <button
+              onClick={() => setActiveTab('collection-points')}
+              className={`flex items-center w-full p-2 rounded-lg ${activeTab === 'collection-points' ? 'bg-[#6CB33F] text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              <Building className="w-5 h-5 mr-2" />
+              Pontos de Coleta
+            </button>
+
+            <button
+              onClick={() => setActiveTab('recycle-content')}
+              className={`flex items-center w-full p-2 rounded-lg ${activeTab === 'recycle-content' ? 'bg-[#6CB33F] text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              <Leaf className="w-5 h-5 mr-2" />
+              Conteúdo Reciclagem
+            </button>
+
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className={`flex items-center w-full p-2 rounded-lg ${activeTab === 'notifications' ? 'bg-[#6CB33F] text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              <Bell className="w-5 h-5 mr-2" />
+              Notificações
+            </button>
+          </nav>
+
+          <div className="p-4 border-t">
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full p-2 text-red-600 rounded-lg hover:bg-red-50"
+            >
+              <LogOut className="w-5 h-5 mr-2" />
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Conteúdo Principal */}
+      <div className="ml-64 p-8">
+        {activeTab === 'dashboard' && (
+          <div className="space-y-8">
+            {/* Cards Estatísticos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Trash2 className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-500">Total de Coletas</p>
+                    <p className="text-2xl font-bold">{dashboardStats.totalCollections}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="p-3 bg-green-100 rounded-full">
+                    <Users className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-500">Usuários Cadastrados</p>
+                    <p className="text-2xl font-bold">{dashboardStats.totalUsers}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="p-3 bg-yellow-100 rounded-full">
+                    <UserPlus className="w-6 h-6 text-yellow-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-500">Catadores Ativos</p>
+                    <p className="text-2xl font-bold">{dashboardStats.activeCollectors}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="p-3 bg-purple-100 rounded-full">
+                    <MapPin className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-500">Pontos de Coleta</p>
+                    <p className="text-2xl font-bold">{dashboardStats.collectionPoints}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Desempenho Mensal</h3>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="coletas" stroke="#6CB33F" />
+                      <Line type="monotone" dataKey="materiais" stroke="#8884d8" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Materiais Reciclados</h3>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={materialData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {materialData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'schedules' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Agendamentos</h2>
+            <div className="flex flex-wrap gap-4 mb-6">
+              <select
+                className="border rounded-lg px-4 py-2"
+                value={scheduleFilters.status}
+                onChange={(e) => setScheduleFilters({ ...scheduleFilters, status: e.target.value })}
+              >
+                <option value="">Todos os Status</option>
+                <option value="pendente">Pendente</option>
+                <option value="concluido">Concluído</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+
+              <input
+                type="date"
+                className="border rounded-lg px-4 py-2"
+                value={scheduleFilters.date}
+                onChange={(e) => setScheduleFilters({ ...scheduleFilters, date: e.target.value })}
+              />
+
+              <select
+                className="border rounded-lg px-4 py-2"
+                value={scheduleFilters.material}
+                onChange={(e) => setScheduleFilters({ ...scheduleFilters, material: e.target.value })}
+              >
+                <option value="">Todos os Materiais</option>
+                <option value="papel">Papel</option>
+                <option value="plastico">Plástico</option>
+                <option value="vidro">Vidro</option>
+                <option value="metal">Metal</option>
+              </select>
+
+              <button
+                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg"
+                onClick={() => setScheduleFilters({ status: '', date: '', material: '' })}
+              >
+                Limpar Filtros
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white">
+                <thead>
+                  <tr className="w-full h-16 border-b border-gray-200">
+                    <th className="text-left pl-4">ID</th>
+                    <th className="text-left">Usuário</th>
+                    <th className="text-left">Data</th>
+                    <th className="text-left">Status</th>
+                    <th className="text-left">Materiais</th>
+                    <th className="text-left">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedules.filter(schedule => {
+                    // Aplicar filtros
+                    if (scheduleFilters.status && schedule.status !== scheduleFilters.status) return false;
+                    if (scheduleFilters.date && schedule.scheduledDate !== scheduleFilters.date) return false;
+                    if (scheduleFilters.material && !schedule.materials.includes(scheduleFilters.material)) return false;
+                    return true;
+                  }).map(schedule => (
+                    <tr key={schedule.id} className="h-20 border-b border-gray-200">
+                      <td className="pl-4">{schedule.id}</td>
+                      <td>{schedule.userName}</td>
+                      <td>{new Date(schedule.scheduledDate).toLocaleDateString('pt-BR')}</td>
+                      <td>
+                        <span className={`px-2 py-1 rounded-full text-xs ${schedule.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
+                          schedule.status === 'concluído' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                          {schedule.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex flex-wrap gap-1">
+                          {schedule.materials.map((material, index) => (
+                            <span key={index} className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                              {material}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex space-x-2">
+                          <select
+                            className="border rounded-md px-2 py-1 text-sm"
+                            value={schedule.status}
+                            onChange={(e) => handleScheduleStatusChange(schedule.id, e.target.value)}
+                          >
+                            <option value="pendente">Pendente</option>
+                            <option value="em_andamento">Em Andamento</option>
+                            <option value="concluído">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                          </select>
+                          <button className="p-1 text-blue-600 hover:text-blue-800">
+                            Ver Detalhes
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {schedules.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  Nenhum agendamento encontrado
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'collectors' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Gerenciar Catadores</h2>
+            <div className="flex justify-between mb-6">
+              <div className="flex space-x-4">
+                <select className="border rounded-lg px-4 py-2">
+                  <option value="">Todos os Bairros</option>
+                  {/* Bairros serão carregados dinamicamente */}
+                </select>
+                <select className="border rounded-lg px-4 py-2">
+                  <option value="">Todas as Disponibilidades</option>
+                  <option value="manha">Manhã</option>
+                  <option value="tarde">Tarde</option>
+                  <option value="noite">Noite</option>
+                </select>
+              </div>
+              <button className="bg-[#6CB33F] text-white px-4 py-2 rounded-lg">
+                Novo Catador
+              </button>
+            </div>
+            {/* Lista de catadores será implementada aqui */}
+          </div>
+        )}
+
+        {activeTab === 'collection-points' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Pontos de Coleta</h2>
+              <button
+                onClick={handleNewPoint}
+                className="bg-[#6CB33F] text-white px-4 py-2 rounded-lg flex items-center"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Novo Ponto de Coleta
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white">
+                <thead>
+                  <tr className="w-full h-16 border-b border-gray-200">
+                    <th className="text-left pl-4">Nome</th>
+                    <th className="text-left">Endereço</th>
+                    <th className="text-left">Telefone</th>
+                    <th className="text-left">Status</th>
+                    <th className="text-left">Materiais</th>
+                    <th className="text-left">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {collectionPoints.map(point => (
+                    <tr key={point.id} className="h-20 border-b border-gray-200">
+                      <td className="pl-4">{point.name}</td>
+                      <td>{point.address}</td>
+                      <td>{point.phone}</td>
+                      <td>
+                        <span className={`px-2 py-1 rounded-full text-xs ${point.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {point.isActive ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex flex-wrap gap-1">
+                          {point.materials.map((material, index) => (
+                            <span
+                              key={index}
+                              className={`px-2 py-1 text-xs rounded-full ${material === 'papel' ? 'bg-blue-100 text-blue-800' :
+                                material === 'plastico' ? 'bg-green-100 text-green-800' :
+                                  material === 'vidro' ? 'bg-yellow-100 text-yellow-800' :
+                                    material === 'metal' ? 'bg-purple-100 text-purple-800' :
+                                      'bg-gray-100 text-gray-800'
+                                }`}
+                            >
+                              {material.charAt(0).toUpperCase() + material.slice(1)}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex space-x-2">
+                          <button
+                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center"
+                            onClick={() => handleEditPoint(point)}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center"
+                            onClick={() => handleDeleteCollectionPoint(point.id)}
+                            title="Excluir ponto de coleta"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            <span>Excluir</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {collectionPoints.length === 0 && (
+                <div className="text-center py-8 bg-white rounded-lg shadow">
+                  <div className="flex flex-col items-center">
+                    <MapPin className="w-12 h-12 text-gray-300 mb-3" />
+                    <p className="text-gray-500 text-lg mb-2">Nenhum ponto de coleta cadastrado</p>
+                    <p className="text-gray-400 text-sm mb-4">Clique no botão "Novo Ponto de Coleta" para adicionar</p>
+                    <button
+                      onClick={handleNewPoint}
+                      className="bg-[#6CB33F] text-white px-4 py-2 rounded-lg flex items-center"
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Novo Ponto de Coleta
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'map' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Mapa de Coleta</h2>
+            <div className="h-[600px] bg-gray-200 rounded-lg">
+              {/* Mapa será implementado aqui */}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'recycle-content' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Conteúdo de Reciclagem</h2>
+              <button
+                onClick={() => setShowRecycleModal(true)}
+                className="bg-[#6CB33F] text-white px-4 py-2 rounded-lg flex items-center"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Nova Categoria
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white">
+                <thead>
+                  <tr className="w-full h-16 border-b border-gray-200">
+                    <th className="text-left pl-4">Título</th>
+                    <th className="text-left">Descrição</th>
+                    <th className="text-left">Cor</th>
+                    <th className="text-left">Vídeo</th>
+                    <th className="text-left">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recycleCategories.map(category => (
+                    <tr key={category.id} className="h-20 border-b border-gray-200">
+                      <td className="pl-4">{category.title}</td>
+                      <td className="max-w-sm truncate">{category.description}</td>
+                      <td>
+                        <div className="h-6 w-6 rounded-full" style={{ backgroundColor: category.color }}></div>
+                      </td>
+                      <td>
+                        {category.youtubeUrl ? (
+                          <a
+                            href={`https://www.youtube.com/watch?v=${category.youtubeUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            Ver vídeo
+                          </a>
+                        ) : 'Sem vídeo'}
+                      </td>
+                      <td>
+                        <div className="flex space-x-2">
+                          <button
+                            className="p-2 text-blue-600 hover:text-blue-800"
+                            onClick={() => {
+                              // Implementação da funcionalidade de edição
+                              const categoryToEdit = recycleCategories.find(cat => cat.id === category.id);
+                              if (categoryToEdit) {
+                                setRecycleCategory({
+                                  title: categoryToEdit.title,
+                                  description: categoryToEdit.description,
+                                  imageUrl: categoryToEdit.imageUrl,
+                                  youtubeUrl: categoryToEdit.youtubeUrl,
+                                  tips: categoryToEdit.tips.length ? categoryToEdit.tips : ['', ''],
+                                  color: categoryToEdit.color
+                                });
+                                setShowRecycleModal(true);
+                              }
+                            }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="p-2 text-red-600 hover:text-red-800"
+                            onClick={() => handleDeleteRecycleCategory(category.id)}
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {recycleCategories.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  Nenhuma categoria de reciclagem cadastrada
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Notificações</h2>
+            <div className="space-y-4">
+              {notifications.map(notification => (
+                <div key={notification.id} className="flex items-center p-4 border rounded-lg">
+                  <Bell className="w-5 h-5 text-yellow-500 mr-4" />
+                  <div className="flex-1">
+                    <p className="text-gray-800">{notification.message}</p>
+                    <p className="text-sm text-gray-500">{notification.time} atrás</p>
+                  </div>
+                  <button className="text-[#6CB33F] hover:text-[#5AA32E]">
+                    Ver detalhes
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modais */}
+      {/* Modal para adicionar/editar ponto de coleta */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto modal-edit-collection-point"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={`flex justify-between items-center p-6 border-b sticky top-0 ${isEditing ? 'bg-blue-50' : 'bg-white'}`}>
+              <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                {isEditing ? (
+                  <>
+                    <Edit className="w-5 h-5 mr-2 text-blue-600" />
+                    Editar Ponto de Coleta {editingPointId && `#${editingPointId}`}
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 mr-2 text-[#6CB33F]" />
+                    Novo Ponto de Coleta
+                  </>
+                )}
+              </h3>
+              <button
+                onClick={handleCloseModal}
+                className="text-gray-500 hover:text-gray-700"
+                type="button"
+                aria-label="Fechar"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="space-y-6">
+                {/* Seção de Identificação */}
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">Identificação</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nome do Ponto de Coleta *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={collectionPoint.name}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nome Curto (Abreviado)
+                      </label>
+                      <input
+                        type="text"
+                        name="shortName"
+                        value={collectionPoint.shortName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="Versão abreviada do nome"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seção de Localização */}
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">Localização</h4>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Endereço Completo *
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={collectionPoint.address}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Rua, número, bairro, cidade, estado, CEP"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Latitude
+                      </label>
+                      <input
+                        type="text"
+                        name="latitude"
+                        value={collectionPoint.latitude}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="Ex: -23.5505"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Longitude
+                      </label>
+                      <input
+                        type="text"
+                        name="longitude"
+                        value={collectionPoint.longitude}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="Ex: -46.6333"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seção de Contato e Funcionamento */}
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">Contato e Funcionamento</h4>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Horário de Funcionamento
+                    </label>
+                    <input
+                      type="text"
+                      name="schedule"
+                      value={collectionPoint.schedule}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Ex: Segunda a Sexta, 8h às 18h"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Telefone
+                      </label>
+                      <input
+                        type="text"
+                        name="phone"
+                        value={collectionPoint.phone}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="Ex: (11) 3333-4444"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        WhatsApp
+                      </label>
+                      <input
+                        type="text"
+                        name="whatsapp"
+                        value={collectionPoint.whatsapp}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="Ex: (11) 99999-8888"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Site
+                    </label>
+                    <input
+                      type="url"
+                      name="website"
+                      value={collectionPoint.website}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Ex: https://www.exemplo.com.br"
+                      pattern="https?://.+"
+                      title="Informe uma URL válida começando com http:// ou https://"
+                    />
+                  </div>
+                </div>
+
+                {/* Seção de Detalhes */}
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">Detalhes</h4>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Descrição
+                    </label>
+                    <textarea
+                      name="description"
+                      value={collectionPoint.description}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Informações adicionais sobre o ponto de coleta"
+                    />
+                  </div>
+
+                  <div className="flex items-center mb-4">
+                    <input
+                      id="isActive"
+                      name="isActive"
+                      type="checkbox"
+                      checked={collectionPoint.isActive}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                    />
+                    <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
+                      Ponto de coleta ativo
+                    </label>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Imagem do Local
+                    </label>
+                    <div className="flex items-center space-x-4">
+                      <label className="cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md text-gray-700 flex items-center">
+                        <FileImage className="w-5 h-5 mr-2" />
+                        Selecionar Imagem
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      {collectionPoint.imagePreview && (
+                        <div className="relative">
+                          <img
+                            src={collectionPoint.imagePreview}
+                            alt="Preview"
+                            className="h-20 w-20 object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCollectionPoint({
+                              ...collectionPoint,
+                              image: null,
+                              imagePreview: undefined
+                            })}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seção de Informações do Sistema - Somente Leitura */}
+                {(collectionPoint.createdAt || collectionPoint.createdBy) && (
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <h4 className="text-lg font-medium text-gray-800 mb-4">Informações do Sistema</h4>
+                    {collectionPoint.createdAt && (
+                      <div className="mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Data de Criação
+                        </label>
+                        <input
+                          type="text"
+                          value={new Date(collectionPoint.createdAt).toLocaleDateString('pt-BR')}
+                          className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md"
+                          disabled
+                        />
+                      </div>
+                    )}
+                    {collectionPoint.createdBy && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Criado por
+                        </label>
+                        <input
+                          type="text"
+                          value={`ID ${collectionPoint.createdBy}`}
+                          className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md"
+                          disabled
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Seção de Materiais Aceitos */}
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">Materiais Aceitos</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="flex items-center">
+                      <input
+                        id="papel"
+                        name="papel"
+                        type="checkbox"
+                        checked={collectionPoint.materials.papel}
+                        onChange={handleCheckboxChange}
+                        className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                      />
+                      <label htmlFor="papel" className="ml-2 text-sm text-gray-700">
+                        Papel
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="plastico"
+                        name="plastico"
+                        type="checkbox"
+                        checked={collectionPoint.materials.plastico}
+                        onChange={handleCheckboxChange}
+                        className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                      />
+                      <label htmlFor="plastico" className="ml-2 text-sm text-gray-700">
+                        Plástico
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="vidro"
+                        name="vidro"
+                        type="checkbox"
+                        checked={collectionPoint.materials.vidro}
+                        onChange={handleCheckboxChange}
+                        className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                      />
+                      <label htmlFor="vidro" className="ml-2 text-sm text-gray-700">
+                        Vidro
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="metal"
+                        name="metal"
+                        type="checkbox"
+                        checked={collectionPoint.materials.metal}
+                        onChange={handleCheckboxChange}
+                        className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                      />
+                      <label htmlFor="metal" className="ml-2 text-sm text-gray-700">
+                        Metal
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="eletronicos"
+                        name="eletronicos"
+                        type="checkbox"
+                        checked={collectionPoint.materials.eletronicos}
+                        onChange={handleCheckboxChange}
+                        className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                      />
+                      <label htmlFor="eletronicos" className="ml-2 text-sm text-gray-700">
+                        Eletrônicos
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="oleo"
+                        name="oleo"
+                        type="checkbox"
+                        checked={collectionPoint.materials.oleo}
+                        onChange={handleCheckboxChange}
+                        className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                      />
+                      <label htmlFor="oleo" className="ml-2 text-sm text-gray-700">
+                        Óleo
+                      </label>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        id="outros"
+                        name="outros"
+                        type="checkbox"
+                        checked={collectionPoint.materials.outros}
+                        onChange={handleCheckboxChange}
+                        className="h-4 w-4 text-[#6CB33F] border-gray-300 rounded"
+                      />
+                      <label htmlFor="outros" className="ml-2 text-sm text-gray-700">
+                        Outros
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seção de Ações - Botões de Salvar/Cancelar */}
+              <div className="mt-8 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`px-4 py-2 text-white rounded-md flex items-center ${
+                    isEditing
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-[#6CB33F] hover:bg-[#5AA32E]'
+                  }`}
+                >
+                  {isEditing ? (
+                    <>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Atualizar
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Salvar
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Modal para adicionar categoria de reciclagem */}
+        {showRecycleModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white">
+                <h3 className="text-xl font-bold text-gray-800">Nova Categoria de Reciclagem</h3>
+                <button
+                  onClick={() => setShowRecycleModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRecycleSubmit} className="p-6">
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Título da Categoria
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={recycleCategory.title}
+                      onChange={handleRecycleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Descrição
+                    </label>
+                    <textarea
+                      name="description"
+                      value={recycleCategory.description}
+                      onChange={handleRecycleInputChange}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        URL da Imagem
+                      </label>
+                      <div className="flex">
+                        <input
+                          type="text"
+                          name="imageUrl"
+                          value={recycleCategory.imageUrl}
+                          onChange={handleRecycleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-l-md"
+                          placeholder="https://exemplo.com/imagem.jpg"
+                        />
+                        <div className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md text-gray-500">
+                          <FileImage className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Código do Vídeo do YouTube
+                      </label>
+                      <div className="flex">
+                        <input
+                          type="text"
+                          name="youtubeUrl"
+                          value={recycleCategory.youtubeUrl}
+                          onChange={handleRecycleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-l-md"
+                          placeholder="dQw4w9WgXcQ"
+                        />
+                        <div className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md text-gray-500">
+                          <Youtube className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Ex: Se o link for https://www.youtube.com/watch?v=dQw4w9WgXcQ, o código é dQw4w9WgXcQ
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Cor da Categoria
+                    </label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="color"
+                        name="color"
+                        value={recycleCategory.color}
+                        onChange={handleRecycleInputChange}
+                        className="w-12 h-10 border-0 p-0"
+                      />
+                      <span className="text-gray-700">{recycleCategory.color}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Dicas de Reciclagem
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addNewTip}
+                        className="text-sm text-[#6CB33F] hover:text-[#5AA32E] font-medium flex items-center"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Adicionar Dica
+                      </button>
+                    </div>
+
+                    {recycleCategory.tips.map((tip, index) => (
+                      <div key={index} className="flex items-center mb-2">
+                        <input
+                          type="text"
+                          value={tip}
+                          onChange={(e) => handleTipChange(index, e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md mr-2"
+                          placeholder="Digite uma dica de reciclagem"
+                        />
+                        {recycleCategory.tips.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTip(index)}
+                            className="p-2 text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowRecycleModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-[#6CB33F] text-white rounded-md hover:bg-[#5AA32E]"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

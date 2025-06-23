@@ -1,0 +1,37 @@
+import { useState } from "react";
+import { Logo } from "./Logo";
+import { UserMenu } from "./UserMenu";
+
+interface HeaderProps {
+  userAvatar?: string;
+}
+
+export function Header({ userAvatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80" }: HeaderProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  return (
+    <>
+      <header className="bg-white p-5 flex justify-between items-center">
+        {/* Logo */}
+        <div className="w-10 h-10">
+          <Logo />
+        </div>
+        
+        {/* User Avatar */}
+        <div 
+          className="w-10 h-10 rounded-full overflow-hidden cursor-pointer"
+          onClick={() => setIsMenuOpen(true)}
+        >
+          <img 
+            src={userAvatar} 
+            alt="Avatar do usuário" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </header>
+      
+      {/* Menu do usuário */}
+      <UserMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    </>
+  );
+}
