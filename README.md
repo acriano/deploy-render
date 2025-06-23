@@ -1,2 +1,0 @@
-# recycleczs-app
-
