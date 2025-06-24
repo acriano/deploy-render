@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
@@ -44,7 +44,7 @@ export async function setupVite(app: Express, server: Server) {
   app.use(vite.middlewares);
 
   // Configuração para arquivo único, sempre enviar index.html
-  app.get("*", async (req, res, next) => {
+  app.get("*", async (req: Request, res: Response, next: NextFunction) => {
     try {
       const url = req.originalUrl;
       const apiPattern = /^\/api\//;
@@ -85,7 +85,7 @@ export function serveStatic(app: Express) {
   }));
   
   // Todas as outras rotas vão para index.html (SPA)
-  app.get("*", (req, res, next) => {
+  app.get("*", (req: Request, res: Response, next: NextFunction) => {
     const apiPattern = /^\/api\//;
     
     // Ignorar solicitações de API

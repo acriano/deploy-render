@@ -1,5 +1,5 @@
 // API Routes - Versão Atualizada
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import {
@@ -21,10 +21,10 @@ import {
   deleteCollectionPoint,
   createMaterial
 } from './storage';
-import { CollectionPoint, AcceptedMaterial } from './types';
+import { CollectionPoint, AcceptedMaterial, RecycleMaterialFromDB } from './types';
 import { closeDb, querySql } from './db';
 import { testConnection } from './config/database';
-import multer from 'multer';
+import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { eq, and, or, like, sql } from 'drizzle-orm';
@@ -44,11 +44,11 @@ console.log('Usando diretório de uploads:', uploadsDir);
 console.log('Usando diretório de imagens de pontos de coleta:', collectionPointsImagesDir);
 
 const storage_config = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
     console.log('Destino do upload:', collectionPointsImagesDir);
     cb(null, collectionPointsImagesDir);
   },
-  filename: (req, file, cb) => {
+  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     // Fix: Get the collection point ID from the request parameters
     const collectionPointId = req.params.id;
     const timestamp = Date.now();
@@ -64,7 +64,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     // Aceitar apenas imagens
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -100,12 +100,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Endpoint para verificar status do servidor
-  app.get("/api/ping", (req, res) => {
+  app.get("/api/ping", (req: Request, res: Response) => {
     res.json({ status: "online", timestamp: new Date().toISOString() });
   });
 
   // Endpoint de health check para o Render
-  app.get("/api/health", async (req, res) => {
+  app.get("/api/health", async (req: Request, res: Response) => {
     try {
       // Testar conexão com o banco de dados
       const dbStatus = await testConnection();
@@ -127,13 +127,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint simples para teste de API
-  app.get("/api/test", (req, res) => {
+  app.get("/api/test", (req: Request, res: Response) => {
     console.log("[API] GET /api/test - Testando API");
     return res.json({ message: "API funcionando corretamente!" });
   });
 
   // Endpoint para debugar headers e configurações de CORS
-  app.get("/api/debug", (req, res) => {
+  app.get("/api/debug", (req: Request, res: Response) => {
     console.log("[API] GET /api/debug - Depurando configurações da API");
     return res.status(200)
       .header('Content-Type', 'application/json')
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Middleware para validação com Zod
   const validateBody = <T extends z.ZodTypeAny>(schema: T) =>
-    (req: Request, res: Response, next: Function) => {
+    (req: Request, res: Response, next: NextFunction) => {
       try {
         req.body = schema.parse(req.body);
         next();
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PONTOS DE COLETA
 
   // Obter todos os pontos de coleta
-  app.get("/api/collection-points", async (req, res) => {
+  app.get("/api/collection-points", async (req: Request, res: Response) => {
     try {
       console.log("Buscando todos os pontos de coleta...");
       const points = await getCollectionPoints();
@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Obter um ponto de coleta por ID
-  app.get("/api/collection-points/:id", async (req, res) => {
+  app.get("/api/collection-points/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const point = await storage.getCollectionPoint(id);
@@ -224,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Criar um novo ponto de coleta
-  app.post("/api/collection-points", async (req, res) => {
+  app.post("/api/collection-points", async (req: Request, res: Response) => {
     try {
       console.log("Corpo da requisição para criar ponto de coleta:", req.body);
 
@@ -284,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload de imagem para ponto de coleta
-  app.post('/api/collection-points/:id/image', (req, res, next) => {
+  app.post('/api/collection-points/:id/image', (req: Request, res: Response, next: NextFunction) => {
     console.log('[UPLOAD] ID recebido na rota:', req.params.id);
     
     // Verificar se o ID é válido antes de prosseguir
@@ -294,11 +294,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Create dynamic storage configuration with access to req.params.id
     const dynamicStorage = multer.diskStorage({
-      destination: (req, file, cb) => {
+      destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
         console.log('Destino do upload:', collectionPointsImagesDir);
         cb(null, collectionPointsImagesDir);
       },
-      filename: (req, file, cb) => {
+      filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
         const collectionPointId = req.params.id;
         console.log('[UPLOAD] ID para filename:', collectionPointId);
         
@@ -320,7 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       limits: {
         fileSize: 10 * 1024 * 1024, // 10MB
       },
-      fileFilter: (req, file, cb) => {
+      fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
         // Aceitar apenas imagens
         if (file.mimetype.startsWith('image/')) {
           cb(null, true);
@@ -330,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     dynamicUpload.single('image')(req, res, next);
-  }, async (req, res) => {
+  }, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       console.log(`[UPLOAD] Recebida solicitação de upload para ID: ${id}`);
@@ -410,7 +410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Atualizar um ponto de coleta
-  app.put('/api/collection-points/:id', authenticateToken, isAdmin, async (req, res) => {
+  app.put('/api/collection-points/:id', authenticateToken, isAdmin, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const existingPoint = await storage.getCollectionPoint(parseInt(id));
@@ -462,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Excluir um ponto de coleta
-  app.delete("/api/collection-points/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/collection-points/:id", authenticateToken, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
 
@@ -493,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Obter materiais aceitos de um ponto de coleta
-  app.get("/api/collection-points/:id/materials", async (req, res) => {
+  app.get("/api/collection-points/:id/materials", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const materials = await storage.getAcceptedMaterials(id);
@@ -507,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MATERIAIS ACEITOS
 
   // Adicionar um material aceito a um ponto de coleta
-  app.post("/api/materials", authenticateToken, async (req, res) => {
+  app.post("/api/materials", authenticateToken, async (req: Request, res: Response) => {
     try {
       const materialData = req.body;
       console.log("[API] Dados do material recebidos:", materialData);
@@ -566,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Verificar se um material já existe para um ponto de coleta
-  app.post("/api/materials/check", authenticateToken, async (req, res) => {
+  app.post("/api/materials/check", authenticateToken, async (req: Request, res: Response) => {
     try {
       const { collectionPointId, materialType } = req.body;
       console.log("[API] Verificando material:", { collectionPointId, materialType });
@@ -601,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remover um material aceito
-  app.delete("/api/materials/:id", async (req, res) => {
+  app.delete("/api/materials/:id", async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     try {
       await storage.removeAcceptedMaterial(id);
@@ -615,7 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AGENDAMENTOS
 
   // Obter agendamentos de um usuário
-  app.get("/api/user/:userId/schedules", async (req, res) => {
+  app.get("/api/user/:userId/schedules", async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.userId);
       const schedules = await storage.getUserSchedules(userId);
@@ -630,7 +630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/schedules",
     validateBody(insertCollectionScheduleSchema),
-    async (req, res) => {
+    async (req: Request, res: Response) => {
       try {
         const newSchedule = await storage.createSchedule(req.body);
         res.status(201).json(newSchedule);
@@ -642,7 +642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Atualizar o status de um agendamento
-  app.patch("/api/schedules/:id/status", async (req, res) => {
+  app.patch("/api/schedules/:id/status", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const { status } = req.body;
@@ -670,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/schedule-materials",
     validateBody(insertScheduleMaterialSchema),
-    async (req, res) => {
+    async (req: Request, res: Response) => {
       try {
         const newMaterial = await storage.addScheduleMaterial(req.body);
         res.status(201).json(newMaterial);
@@ -682,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Obter materiais de um agendamento
-  app.get("/api/schedules/:scheduleId/materials", async (req, res) => {
+  app.get("/api/schedules/:scheduleId/materials", async (req: Request, res: Response) => {
     try {
       const scheduleId = parseInt(req.params.scheduleId);
       const materials = await storage.getScheduleMaterials(scheduleId);
@@ -699,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/reviews",
     validateBody(insertReviewSchema),
-    async (req, res) => {
+    async (req: Request, res: Response) => {
       try {
         const newReview = await storage.createReview(req.body);
         res.status(201).json(newReview);
@@ -711,7 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Obter avaliações de um ponto de coleta
-  app.get("/api/collection-points/:id/reviews", async (req, res) => {
+  app.get("/api/collection-points/:id/reviews", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const reviews = await storage.getCollectionPointReviews(id);
@@ -725,7 +725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // USUÁRIOS
 
   // Login de usuário
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
 
@@ -779,7 +779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Login exclusivo para administradores
-  app.post("/api/auth/admin-login", async (req, res) => {
+  app.post("/api/auth/admin-login", async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
 
@@ -851,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/users",
     validateBody(insertUserSchema),
-    async (req, res) => {
+    async (req: Request, res: Response) => {
       try {
         console.log('Tentando criar usuário com dados:', {
           username: req.body.username,
@@ -911,7 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Endpoint para verificar e reiniciar a conexão do banco de dados
-  app.post("/api/db-health", (req, res) => {
+  app.post("/api/db-health", (req: Request, res: Response) => {
     try {
       console.log("Reiniciando conexão com o banco de dados...");
 
@@ -939,7 +939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // === API de Materiais Recicláveis ===
   
   // Listar todos os materiais recicláveis
-  app.get("/api/recycle-materials", async (req, res) => {
+  app.get("/api/recycle-materials", async (req: Request, res: Response) => {
     try {
       console.log("[API] Listando todos os materiais recicláveis");
       
@@ -958,7 +958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Converter os itens para o formato correto
-      const formattedMaterials = materials.map((material: any) => {
+      const formattedMaterials = materials.map((material: RecycleMaterialFromDB) => {
         try {
           // Se os campos são arrays do PostgreSQL, convertê-los para strings JSON primeiro
           const recyclableItems = Array.isArray(material.recyclable_items) 
@@ -1010,7 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Obter um material reciclável específico
-  app.get("/api/recycle-materials/:id", async (req, res) => {
+  app.get("/api/recycle-materials/:id", async (req: Request, res: Response) => {
     try {
       const id = req.params.id;
       console.log(`[API] Buscando material reciclável com ID: ${id}`);
@@ -1060,7 +1060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Criar um novo material reciclável
-  app.post("/api/recycle-materials", async (req, res) => {
+  app.post("/api/recycle-materials", async (req: Request, res: Response) => {
     try {
       const { id, name, description, items } = req.body;
       
@@ -1128,7 +1128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Atualizar um material reciclável
-  app.put("/api/recycle-materials/:id", async (req, res) => {
+  app.put("/api/recycle-materials/:id", async (req: Request, res: Response) => {
     try {
       const id = req.params.id;
       console.log(`[API] Atualizando material reciclável com ID: ${id}`, req.body);
@@ -1202,7 +1202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Excluir um material reciclável
-  app.delete("/api/recycle-materials/:id", async (req, res) => {
+  app.delete("/api/recycle-materials/:id", async (req: Request, res: Response) => {
     try {
       const id = req.params.id;
       console.log(`[API] Excluindo material reciclável com ID: ${id}`);
@@ -1233,84 +1233,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500)
         .header('Content-Type', 'application/json')
         .json({ error: "Erro ao excluir material" });
-    }
-  });
-
-  // Rota para atualizar um ponto de coleta
-  app.put('/api/collection-points/:id', authenticateToken, isAdmin, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const existingPoint = await storage.getCollectionPoint(parseInt(id));
-
-      if (!existingPoint) {
-        return res.status(404).json({ error: 'Ponto de coleta não encontrado' });
-      }
-
-      // Garantir que latitude e longitude sejam números
-      let latitude = req.body.latitude !== undefined ? Number(req.body.latitude) : existingPoint.latitude;
-      let longitude = req.body.longitude !== undefined ? Number(req.body.longitude) : existingPoint.longitude;
-
-      const updatedPointData = {
-        name: req.body.name || existingPoint.name,
-        address: req.body.address || existingPoint.address,
-        latitude,
-        longitude,
-        short_name: req.body.shortName || existingPoint.shortName,
-        schedule: req.body.schedule || existingPoint.schedule,
-        phone: req.body.phone || existingPoint.phone,
-        whatsapp: req.body.whatsapp !== undefined ? req.body.whatsapp : existingPoint.whatsapp,
-        website: req.body.website || existingPoint.website,
-        description: req.body.description || existingPoint.description,
-        is_active: req.body.isActive !== undefined ? req.body.isActive : existingPoint.isActive,
-        image_url: req.body.imageUrl || existingPoint.imageUrl
-      };
-
-      console.log('Dados recebidos para atualização:', req.body);
-      console.log('Dados normalizados para atualização:', updatedPointData);
-
-      // Atualizar o ponto
-      await updateCollectionPoint(parseInt(id), updatedPointData);
-      
-      // Buscar o ponto atualizado
-      const finalUpdatedPoint = await storage.getCollectionPoint(parseInt(id));
-
-      if (!finalUpdatedPoint) {
-        return res.status(500).json({ error: 'Erro ao obter o ponto de coleta atualizado após a atualização.' });
-      }
-
-      res.json(finalUpdatedPoint); // Retorna o objeto do ponto de coleta atualizado
-    } catch (error) {
-      console.error('Erro ao atualizar ponto de coleta:', error);
-      res.status(500).json({ 
-        error: 'Erro ao atualizar ponto de coleta',
-        details: error instanceof Error ? error.message : 'Erro desconhecido',
-      });
-    }
-  });
-
-  // Rota para excluir um material aceito
-  app.delete('/collection-points/:id/materials/:materialId', authenticateToken, async (req, res) => {
-    try {
-      const { id, materialId } = req.params;
-      const material = await querySql(`
-        SELECT id FROM accepted_materials WHERE id = $1 AND collection_point_id = $2
-      `, [parseInt(materialId), parseInt(id)]);
-
-      if (!material || material.length === 0) {
-        return res.status(404).json({ error: 'Material não encontrado' });
-      }
-
-      console.log(`Excluindo material ID ${material[0].id} (${material[0].materialType}) do ponto ${id}`);
-      await querySql(`
-        DELETE FROM accepted_materials WHERE id = $1 AND collection_point_id = $2
-      `, [parseInt(materialId), parseInt(id)]);
-      res.json({ message: 'Material removido com sucesso' });
-    } catch (error) {
-      console.error('Erro ao remover material:', error);
-      res.status(500).json({ 
-        error: 'Erro ao remover material',
-        message: error instanceof Error ? error.message : 'Erro desconhecido'
-      });
     }
   });
 
