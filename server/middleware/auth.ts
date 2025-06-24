@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { getDb } from '../db.js';
-import { users } from '@shared/schema';
+import { users } from '../../shared/schema.js';
 import { eq } from 'drizzle-orm';
 import { JWT_SECRET } from '../config.js';
 
