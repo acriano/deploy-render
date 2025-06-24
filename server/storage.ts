@@ -9,7 +9,7 @@ import {
   collectionPointMaterials, type CollectionPointMaterial, type InsertCollectionPointMaterial,
   operatingHours, type OperatingHours, type InsertOperatingHours
 } from "../shared/schema.js";
-import { getDb } from "./db";
+import { getDb } from "./db.js";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
