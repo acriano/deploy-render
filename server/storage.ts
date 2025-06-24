@@ -8,7 +8,7 @@ import {
   schedules, type Schedule, type InsertSchedule,
   collectionPointMaterials, type CollectionPointMaterial, type InsertCollectionPointMaterial,
   operatingHours, type OperatingHours, type InsertOperatingHours
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { getDb } from "./db";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 
