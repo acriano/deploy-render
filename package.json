@@ -14,7 +14,7 @@
     "build:backend-final": "powershell -Command \"(Get-Content server/vite.ts) -replace 'const viteConfig = \\(await import\\(\"\\\\.\\./client/vite\\.config\\.mjs\"\\)\\)\\.default;', '// const viteConfig = (await import(\"../client/vite.config.mjs\")).default;' -replace '\\.\\.\\.viteConfig,', '// ...viteConfig,' | Set-Content server/vite.ts\" && move client client_temp && tsc --project tsconfig.backend.json && xcopy scripts dist\\scripts /E /I /Y && move client_temp client && powershell -Command \"(Get-Content server/vite.ts) -replace '// const viteConfig = \\(await import\\(\"\\\\.\\./client/vite\\.config\\.mjs\"\\)\\)\\.default;', 'const viteConfig = (await import(\"../client/vite.config.mjs\")).default;' -replace '// \\.\\.\\.viteConfig,', '...viteConfig,' | Set-Content server/vite.ts\"",
     "build:deploy": "cd client && npm run build && cd .. && npm run build:backend",
     "build": "npm run build:deploy",
-    "start": "cross-env NODE_ENV=production node dist/server/index.js",
+    "start": "NODE_ENV=production node dist/server/index.js",
     "start:prod": "node scripts/init-production.cjs && npm start",
     "build:start": "npm run build && npm run start",
     "build:dev": "npm run build && npm run dev",
@@ -124,7 +124,8 @@
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "cross-env": "^7.0.3"
   },
   "devDependencies": {
     "@replit/vite-plugin-cartographer": "^0.0.11",
