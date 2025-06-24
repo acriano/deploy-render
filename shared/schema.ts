@@ -1,11 +1,11 @@
-import { pgTable, text, integer, real, boolean, timestamp, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, real, boolean, timestamp, unique, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Tabela de usuários
 export const users = pgTable("users", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name"),
@@ -18,7 +18,7 @@ export const users = pgTable("users", {
 
 // Tabela de pontos de coleta
 export const collectionPoints = pgTable("collection_points", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   shortName: text("short_name"),
   address: text("address").notNull(),
@@ -32,13 +32,13 @@ export const collectionPoints = pgTable("collection_points", {
   isActive: boolean("is_active").default(true),
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
-  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(), // ✅ ADICIONAR ESTA LINHA
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
 });
 
 // Tabela de materiais aceitos nos pontos de coleta
 export const acceptedMaterials = pgTable("accepted_materials", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   collectionPointId: integer("collection_point_id").notNull().references(() => collectionPoints.id, { onDelete: "cascade" }),
   materialType: text("material_type").notNull(),
   description: text("description"),
@@ -50,7 +50,7 @@ export const acceptedMaterials = pgTable("accepted_materials", {
 
 // Tabela de agendamentos de coleta
 export const collectionSchedules = pgTable("collection_schedules", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   collectionPointId: integer("collection_point_id").references(() => collectionPoints.id),
   collectorId: integer("collector_id").references(() => users.id),
@@ -66,7 +66,7 @@ export const collectionSchedules = pgTable("collection_schedules", {
 
 // Tabela de materiais nos agendamentos de coleta
 export const scheduleMaterials = pgTable("schedule_materials", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   scheduleId: integer("schedule_id").notNull().references(() => collectionSchedules.id, { onDelete: "cascade" }),
   materialType: text("material_type").notNull(),
   quantity: real("quantity"),
@@ -75,7 +75,7 @@ export const scheduleMaterials = pgTable("schedule_materials", {
 
 // Tabela de comentários e avaliações
 export const reviews = pgTable("reviews", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   collectionPointId: integer("collection_point_id").references(() => collectionPoints.id),
   collectorId: integer("collector_id").references(() => users.id),
@@ -87,7 +87,7 @@ export const reviews = pgTable("reviews", {
 
 // Tabela de horários de funcionamento
 export const schedules = pgTable("schedules", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   collectionPointId: integer("collection_point_id").notNull().references(() => collectionPoints.id, { onDelete: "cascade" }),
   dayOfWeek: integer("day_of_week").notNull(),
   openTime: text("open_time").notNull(),
@@ -99,7 +99,7 @@ export const schedules = pgTable("schedules", {
 
 // Tabela de materiais nos pontos de coleta
 export const collectionPointMaterials = pgTable("collection_point_materials", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   collectionPointId: integer("collection_point_id").notNull().references(() => collectionPoints.id, { onDelete: "cascade" }),
   materialType: text("material_type").notNull(),
   description: text("description"),
@@ -113,7 +113,7 @@ export const collectionPointMaterials = pgTable("collection_point_materials", {
 
 // Tabela de horários de operação
 export const operatingHours = pgTable("operating_hours", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   collectionPointId: integer("collection_point_id").notNull().references(() => collectionPoints.id, { onDelete: "cascade" }),
   dayOfWeek: integer("day_of_week").notNull(),
   openTime: text("open_time").notNull(),

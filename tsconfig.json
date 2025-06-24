@@ -8,7 +8,9 @@
     "node_modules",
     "build",
     "dist",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "vite.config.ts",
+    "vite.config.mts"
   ],
   "compilerOptions": {
     "incremental": true,

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export default defineConfig(async ({ mode }) => {
+export default defineConfig(({ mode }) => {
   // Carregar variáveis de ambiente
   const env = loadEnv(mode, process.cwd(), '');
   const apiUrl = env.VITE_API_URL || 'http://localhost:5000';
@@ -18,17 +18,18 @@ export default defineConfig(async ({ mode }) => {
     runtimeErrorOverlay()
   ];
 
+  // Cartographer só em ambiente de desenvolvimento e se disponível
   if (mode !== "production" && env.REPL_ID !== undefined) {
-    const cartographer = await import("@replit/vite-plugin-cartographer");
-    plugins.push(cartographer.cartographer());
+    try {
+      const cartographer = require("@replit/vite-plugin-cartographer");
+      plugins.push(cartographer.cartographer());
+    } catch {}
   }
   
   return {
     plugins,
     define: {
-      // Definir variáveis de ambiente que serão substituídas em tempo de build
       'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
-      // Garantir que process.env não seja usado no cliente
       'process.env': {}
     },
     resolve: {
@@ -83,4 +84,4 @@ export default defineConfig(async ({ mode }) => {
       }
     }
   };
-});
+}); 

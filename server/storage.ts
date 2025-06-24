@@ -126,15 +126,18 @@ export const createMaterial = async (material: InsertAcceptedMaterial) => {
       .values({
         collectionPointId: material.collectionPointId,
         materialType: material.materialType,
-        description: material.description ?? null,
-        createdAt: new Date().toISOString()
+        description: material.description ?? null
       })
       .returning();
       
     console.log('Material criado com sucesso:', newMaterial);
     return newMaterial;
   } catch (error) {
-    console.error('Erro ao criar material:', error);
+    if (error instanceof Error) {
+      console.error('Erro ao criar material:', error.message);
+    } else {
+      console.error('Erro ao criar material:', error);
+    }
     throw error;
   }
 };
@@ -264,7 +267,6 @@ export class DatabaseStorage implements IStorage {
       if (point.schedule !== undefined) updateData.schedule = point.schedule;
       if (point.phone !== undefined) updateData.phone = point.phone;
       if (point.website !== undefined) updateData.website = point.website;
-      if (point.whatsapp !== undefined) updateData.whatsapp = point.whatsapp;
       if (point.description !== undefined) updateData.description = point.description;
       if (point.isActive !== undefined) updateData.isActive = point.isActive;
       if (point.imageUrl !== undefined) {
@@ -453,11 +455,7 @@ export class DatabaseStorage implements IStorage {
     const db = getDb();
     const [newSchedule] = await db
       .insert(schedules)
-      .values({
-        ...schedule,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      })
+      .values(schedule)
       .returning();
     return newSchedule;
   }
@@ -468,7 +466,7 @@ export class DatabaseStorage implements IStorage {
       .update(schedules)
       .set({
         ...schedule,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(schedules.id, id))
       .returning();
@@ -601,13 +599,12 @@ export const storage = new DatabaseStorage();
 
 export async function addAcceptedMaterial(collectionPointId: number, materialType: string, description?: string) {
   try {
-    const result = await db.insert(collectionPointMaterials).values({
+    const db = getDb();
+    const [result] = await db.insert(collectionPointMaterials).values({
       collectionPointId,
       materialType,
-      description,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
+      description: description ?? null
+    }).returning();
     return result;
   } catch (error) {
     console.error('Erro ao adicionar material:', error);
@@ -617,13 +614,13 @@ export async function addAcceptedMaterial(collectionPointId: number, materialTyp
 
 export async function updateSchedule(id: number, status: string) {
   try {
-    const result = await db.update(schedules)
+    const db = getDb();
+    const [result] = await db.update(schedules)
       .set({
-        status,
-        completedDate: status === "concluída" ? new Date().toISOString() : null,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
-      .where(eq(schedules.id, id));
+      .where(eq(schedules.id, id))
+      .returning();
     return result;
   } catch (error) {
     console.error('Erro ao atualizar agendamento:', error);
@@ -633,14 +630,13 @@ export async function updateSchedule(id: number, status: string) {
 
 export async function addScheduleMaterial(scheduleId: number, materialType: string, quantity: number, unit: string) {
   try {
-    const result = await db.insert(scheduleMaterials).values({
+    const db = getDb();
+    const [result] = await db.insert(scheduleMaterials).values({
       scheduleId,
       materialType,
       quantity,
-      unit,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
+      unit
+    }).returning();
     return result;
   } catch (error) {
     console.error('Erro ao adicionar material ao agendamento:', error);
@@ -650,12 +646,11 @@ export async function addScheduleMaterial(scheduleId: number, materialType: stri
 
 export async function updateScheduleMaterial(id: number, data: Partial<ScheduleMaterial>) {
   try {
-    const result = await db.update(scheduleMaterials)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString()
-      })
-      .where(eq(scheduleMaterials.id, id));
+    const db = getDb();
+    const [result] = await db.update(scheduleMaterials)
+      .set(data)
+      .where(eq(scheduleMaterials.id, id))
+      .returning();
     return result;
   } catch (error) {
     console.error('Erro ao atualizar material do agendamento:', error);
@@ -665,14 +660,13 @@ export async function updateScheduleMaterial(id: number, data: Partial<ScheduleM
 
 export async function addReview(userId: number, collectionPointId: number, rating: number, comment?: string) {
   try {
-    const result = await db.insert(reviews).values({
+    const db = getDb();
+    const [result] = await db.insert(reviews).values({
       userId,
       collectionPointId,
       rating,
-      comment,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
+      comment: comment ?? null
+    }).returning();
     return result;
   } catch (error) {
     console.error('Erro ao adicionar avaliação:', error);
@@ -682,12 +676,11 @@ export async function addReview(userId: number, collectionPointId: number, ratin
 
 export async function updateReview(id: number, data: Partial<Review>) {
   try {
-    const result = await db.update(reviews)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString()
-      })
-      .where(eq(reviews.id, id));
+    const db = getDb();
+    const [result] = await db.update(reviews)
+      .set(data)
+      .where(eq(reviews.id, id))
+      .returning();
     return result;
   } catch (error) {
     console.error('Erro ao atualizar avaliação:', error);

@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!collectionPointId || collectionPointId === 'undefined') {
           console.error('[UPLOAD] ID inválido para filename:', collectionPointId);
-          return cb(new Error('ID do ponto de coleta inválido'));
+          return cb(new Error('ID do ponto de coleta inválido'), '');
         }
         
         const timestamp = Date.now();
@@ -413,7 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/collection-points/:id', authenticateToken, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const existingPoint = await getCollectionPointById(parseInt(id));
+      const existingPoint = await storage.getCollectionPoint(parseInt(id));
 
       if (!existingPoint) {
         return res.status(404).json({ error: 'Ponto de coleta não encontrado' });
@@ -445,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await updateCollectionPoint(parseInt(id), updatedPointData);
       
       // Buscar o ponto atualizado
-      const finalUpdatedPoint = await getCollectionPointById(parseInt(id));
+      const finalUpdatedPoint = await storage.getCollectionPoint(parseInt(id));
 
       if (!finalUpdatedPoint) {
         return res.status(500).json({ error: 'Erro ao obter o ponto de coleta atualizado após a atualização.' });
@@ -532,7 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verificar se o ponto de coleta existe
-      const pointExists = await storage.getCollectionPointById(materialData.collectionPointId);
+      const pointExists = await storage.getCollectionPoint(materialData.collectionPointId);
       if (!pointExists) {
         console.log("[API] Ponto de coleta não encontrado:", materialData.collectionPointId);
         return res.status(404).json({ 
@@ -552,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("[API] Erro ao processar material:", error);
       
       // Verificar se é erro de constraint de unicidade
-      if (error.code === '23505') {
+      if (error instanceof Error && 'code' in error && error.code === '23505') {
         return res.status(409).json({ 
           error: 'Este material já está associado a este ponto de coleta' 
         });
@@ -560,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(500).json({ 
         error: 'Erro ao processar material',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
       });
     }
   });
@@ -579,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verificar se o ponto de coleta existe
-      const pointExists = await storage.getCollectionPointById(collectionPointId);
+      const pointExists = await storage.getCollectionPoint(collectionPointId);
       if (!pointExists) {
         console.log("[API] Ponto de coleta não encontrado:", collectionPointId);
         return res.status(404).json({ 
@@ -595,7 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("[API] Erro ao verificar material:", error);
       res.status(500).json({ 
         error: "Erro ao verificar material",
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
       });
     }
   });
@@ -604,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/materials/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     try {
-      await deleteMaterial(id);
+      await storage.removeAcceptedMaterial(id);
       res.status(204).send();
     } catch (error) {
       console.error("Erro ao deletar material:", error);
@@ -925,7 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Erro ao reiniciar conexão com banco de dados:", error);
       res.status(500).json({
         error: "Erro ao reiniciar conexão com banco de dados",
-        message: error instanceof Error ? error.message : error.message
+        message: error instanceof Error ? error.message : 'Erro desconhecido'
       });
     }
   });
@@ -1240,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/collection-points/:id', authenticateToken, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const existingPoint = await getCollectionPointById(parseInt(id));
+      const existingPoint = await storage.getCollectionPoint(parseInt(id));
 
       if (!existingPoint) {
         return res.status(404).json({ error: 'Ponto de coleta não encontrado' });
@@ -1272,7 +1272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await updateCollectionPoint(parseInt(id), updatedPointData);
       
       // Buscar o ponto atualizado
-      const finalUpdatedPoint = await getCollectionPointById(parseInt(id));
+      const finalUpdatedPoint = await storage.getCollectionPoint(parseInt(id));
 
       if (!finalUpdatedPoint) {
         return res.status(500).json({ error: 'Erro ao obter o ponto de coleta atualizado após a atualização.' });
