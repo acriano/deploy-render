@@ -9,6 +9,7 @@
     "dev:client": "dotenv -e .env.development -- vite",
     "build": "cd client && npm run build",
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
+    "start:prod": "node scripts/init-production.js && npm start",
     "build:start": "npm run build && npm run start",
     "build:dev": "npm run build && npm run dev",
     "start:dashboard": "node start-dashboard-3000.js",
@@ -30,7 +31,8 @@
     "migrate:postgres": "node migrate-to-postgres.js",
     "drop:tables": "node drop-tables.js",
     "check:schema": "node check-sqlite-schema.js",
-    "verify:migration": "node verify-migration.js"
+    "verify:migration": "node verify-migration.js",
+    "check:deploy": "node scripts/check-deploy.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

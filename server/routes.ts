@@ -23,6 +23,7 @@ import {
 } from './storage';
 import { CollectionPoint, AcceptedMaterial } from './types';
 import { closeDb, querySql } from './db';
+import { testConnection } from './config/database';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -101,6 +102,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint para verificar status do servidor
   app.get("/api/ping", (req, res) => {
     res.json({ status: "online", timestamp: new Date().toISOString() });
+  });
+
+  // Endpoint de health check para o Render
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Testar conexão com o banco de dados
+      const dbStatus = await testConnection();
+      
+      res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        database: dbStatus ? "connected" : "disconnected",
+        environment: process.env.NODE_ENV || "development",
+        version: "1.0.0"
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
   });
 
   // Endpoint simples para teste de API
