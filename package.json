@@ -15,7 +15,7 @@
     "build:deploy": "cd client && npm run build && cd .. && npm run build:backend",
     "build": "npm run build:deploy",
     "start": "cross-env NODE_ENV=production node dist/server/index.js",
-    "start:prod": "node scripts/init-production.js && npm start",
+    "start:prod": "node scripts/init-production.cjs && npm start",
     "build:start": "npm run build && npm run start",
     "build:dev": "npm run build && npm run dev",
     "start:dashboard": "node start-dashboard-3000.js",
