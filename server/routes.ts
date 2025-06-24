@@ -1,7 +1,7 @@
 // API Routes - Versão Atualizada
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import {
   insertUserSchema,
   insertCollectionPointSchema,
@@ -11,7 +11,7 @@ import {
   insertReviewSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { comparePassword, hashPassword } from './auth';
+import { comparePassword, hashPassword } from './auth.js';
 import { Router } from 'express';
 import express from 'express';
 import {
@@ -20,18 +20,18 @@ import {
   updateCollectionPoint,
   deleteCollectionPoint,
   createMaterial
-} from './storage';
-import { CollectionPoint, AcceptedMaterial, RecycleMaterialFromDB } from './types';
-import { closeDb, querySql } from './db';
-import { testConnection } from './config/database';
+} from './storage.js';
+import { CollectionPoint, AcceptedMaterial, RecycleMaterialFromDB } from './types.js';
+import { closeDb, querySql } from './db.js';
+import { testConnection } from './config/database.js';
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { eq, and, or, like, sql } from 'drizzle-orm';
-import { authenticateToken, isAdmin } from './middleware/auth';
-import { migrateData } from './migrate-data';
+import { authenticateToken, isAdmin } from './middleware/auth.js';
+import { migrateData } from './migrate-data.js';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from './config';
+import { JWT_SECRET } from './config.js';
 
 const router = Router();
 

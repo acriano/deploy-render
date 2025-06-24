@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { registerRoutes } from './routes';
+import { registerRoutes } from './routes.js';
 
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;

@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { getDb } from '../db';
+import { getDb } from '../db.js';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
-import { JWT_SECRET } from '../config';
+import { JWT_SECRET } from '../config.js';
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   console.log('\n=== Iniciando autenticação ===');
