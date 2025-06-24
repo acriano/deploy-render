@@ -74,9 +74,14 @@ export function getDb() {
 
 // Função para executar queries SQL diretamente
 export async function executeSql(sql: string, params: any[] = []) {
-  const db = getDb();
+  if (!poolInstance) {
+    getDb(); // Isso vai inicializar o pool se ainda não estiver inicializado
+  }
+  if (!poolInstance) {
+    throw new Error('Pool de conexão não inicializado');
+  }
   return await retryOperation(async () => {
-    return await db.execute(sql, params);
+    return await poolInstance!.query(sql, params);
   });
 }
 

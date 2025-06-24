@@ -1,14 +1,13 @@
-import { getDb } from './db';
-import { execute, query } from './config/database';
+import { getDb, executeSql, querySql } from './db';
 import { sql } from 'drizzle-orm';
 import { users, collectionPoints, acceptedMaterials, schedules, reviews } from '@shared/schema';
 
 async function migrateUsers() {
   console.log('Migrando usuários...');
-  const sqliteUsers = await getDb.select().from(users);
+  const sqliteUsers = await querySql('SELECT * FROM users');
   
   for (const user of sqliteUsers) {
-    await execute(`
+    await executeSql(`
       INSERT INTO users (id, name, email, password, role, created_at)
       VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (email) DO NOTHING
@@ -26,10 +25,10 @@ async function migrateUsers() {
 
 async function migrateCollectionPoints() {
   console.log('Migrando pontos de coleta...');
-  const sqlitePoints = await getDb.select().from(collectionPoints);
+  const sqlitePoints = await querySql('SELECT * FROM collection_points');
   
   for (const point of sqlitePoints) {
-    await execute(`
+    await executeSql(`
       INSERT INTO collection_points (
         id, name, address, latitude, longitude, short_name,
         schedule, phone, website, description,
@@ -57,10 +56,10 @@ async function migrateCollectionPoints() {
 
 async function migrateAcceptedMaterials() {
   console.log('Migrando materiais aceitos...');
-  const sqliteMaterials = await getDb.select().from(acceptedMaterials);
+  const sqliteMaterials = await querySql('SELECT * FROM accepted_materials');
   
   for (const material of sqliteMaterials) {
-    await execute(`
+    await executeSql(`
       INSERT INTO accepted_materials (
         id, collection_point_id, material_type, description
       )
@@ -78,10 +77,10 @@ async function migrateAcceptedMaterials() {
 
 async function migrateSchedules() {
   console.log('Migrando agendamentos...');
-  const sqliteSchedules = await getDb.select().from(schedules);
+  const sqliteSchedules = await querySql('SELECT * FROM schedules');
   
   for (const schedule of sqliteSchedules) {
-    await execute(`
+    await executeSql(`
       INSERT INTO schedules (
         id, collection_point_id, day_of_week, open_time, close_time, is_open, created_at
       )
@@ -102,10 +101,10 @@ async function migrateSchedules() {
 
 async function migrateReviews() {
   console.log('Migrando avaliações...');
-  const sqliteReviews = await getDb.select().from(reviews);
+  const sqliteReviews = await querySql('SELECT * FROM reviews');
   
   for (const review of sqliteReviews) {
-    await execute(`
+    await executeSql(`
       INSERT INTO reviews (
         id, collection_point_id, user_id, rating,
         comment, created_at

@@ -202,31 +202,14 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
-      console.log('Tentando criar usuário no banco de dados:', {
-        username: insertUser.username,
-        email: insertUser.email,
-        name: insertUser.name
-      });
-
       const db = getDb();
       const [user] = await db
         .insert(users)
         .values(insertUser)
         .returning();
-
-      if (!user) {
-        throw new Error('Falha ao criar usuário: nenhum usuário retornado');
-      }
-
-      console.log('Usuário criado com sucesso no banco de dados:', {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      });
-
+      if (!user) throw new Error('Falha ao criar usuário: nenhum usuário retornado');
       return user;
     } catch (error) {
-      console.error('Erro ao criar usuário:', error);
       throw error;
     }
   }
@@ -251,36 +234,14 @@ export class DatabaseStorage implements IStorage {
 
   async createCollectionPoint(point: InsertCollectionPoint): Promise<CollectionPoint> {
     try {
-      console.log('Criando ponto de coleta com dados completos:', point);
-
       const db = getDb();
-
       const [newPoint] = await db
         .insert(collectionPoints)
-        .values({
-          name: point.name,
-          shortName: point.shortName || null,
-          address: point.address,
-          latitude: Number(point.latitude),
-          longitude: Number(point.longitude),
-          schedule: point.schedule || null,
-          phone: point.phone || null,
-          website: point.website || null,
-          whatsapp: point.whatsapp || null,
-          description: point.description || null,
-          isActive: point.isActive ?? true,
-          createdBy: point.createdBy || null
-        })
+        .values(point)
         .returning();
-
-      if (!newPoint) {
-        throw new Error('Falha ao criar ponto de coleta: nenhum ponto retornado');
-      }
-
-      console.log('Ponto de coleta criado com sucesso:', newPoint);
+      if (!newPoint) throw new Error('Falha ao criar ponto de coleta: nenhum ponto retornado');
       return newPoint;
     } catch (error) {
-      console.error('Erro ao criar ponto de coleta:', error);
       throw error;
     }
   }
@@ -310,9 +271,7 @@ export class DatabaseStorage implements IStorage {
         console.log('Atualizando URL da imagem para:', point.imageUrl);
         updateData.imageUrl = point.imageUrl;
       }
-  
-      // ✅ DESCOMENTAR E CORRIGIR ESTA LINHA:
-      // updateData.updatedAt = new Date();
+      updateData.updatedAt = new Date();
   
       if (Object.keys(updateData).length === 0) {
         console.log('Nenhum campo para atualizar');
@@ -420,7 +379,7 @@ export class DatabaseStorage implements IStorage {
       .update(collectionSchedules)
       .set({
         status: status as any,
-        completedDate: status === "concluída" ? new Date().toISOString() : null
+        completedDate: status === "concluída" ? new Date() : null
       })
       .where(eq(collectionSchedules.id, id))
       .returning();
@@ -595,7 +554,10 @@ export class DatabaseStorage implements IStorage {
     const db = getDb();
     const [updatedHours] = await db
       .update(operatingHours)
-      .set(hours)
+      .set({
+        ...hours,
+        updatedAt: new Date()
+      })
       .where(eq(operatingHours.id, id))
       .returning();
     return updatedHours;
