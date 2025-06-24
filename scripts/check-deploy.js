@@ -33,7 +33,7 @@ const checks = [
     path: '../Dockerfile',
     required: false,
     check: (content) => {
-      return content.includes('node:20') && content.includes('npm start');
+      return content.includes('node:20') && (content.includes('npm start') || content.includes('npm run start:prod'));
     }
   },
   {
