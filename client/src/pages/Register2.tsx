@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
+import { API_CONFIG } from "../config";
 
 export default function Register2() {
   const [, setLocation] = useLocation();
@@ -212,7 +213,7 @@ export default function Register2() {
         setDebugInfo("Enviando dados para o servidor...");
 
         // Enviar dados para a API (usar URL completa para garantir que vai para o endpoint correto)
-        const response = await fetch('http://localhost:5000/api/users', {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/users`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

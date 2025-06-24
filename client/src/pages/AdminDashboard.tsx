@@ -43,6 +43,7 @@ import { RecycleMaterialsApi } from "@/lib/api";
 import { getFullImageUrl, handleImageError } from "@/utils/imageUtils";
 import { queryClient } from "@/lib/queryClient";
 import { api } from "@/lib/api";
+import { API_CONFIG } from "../config";
 
 // Definição de interfaces
 interface DashboardStats {
@@ -511,7 +512,7 @@ export default function AdminDashboard() {
   const testApiConnection = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/recycle-materials', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/recycle-materials`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -556,7 +557,7 @@ export default function AdminDashboard() {
       // Tentar com modo raw (usando XMLHttpRequest)
       console.log("Tentando com XMLHttpRequest...");
       const xhr = new XMLHttpRequest();
-      xhr.open("GET", "http://localhost:5000/api/debug", true);
+      xhr.open("GET", `${API_CONFIG.BASE_URL}/api/debug`, true);
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.setRequestHeader("Accept", "application/json");
       
@@ -568,7 +569,7 @@ export default function AdminDashboard() {
           // Agora tentando com fetch
           console.log("\nAgora tentando com fetch...");
           
-          const fetchResponse = await fetch('http://localhost:5000/api/debug', {
+          const fetchResponse = await fetch(`${API_CONFIG.BASE_URL}/api/debug`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -1770,7 +1771,7 @@ export default function AdminDashboard() {
   };
 
   // Verificar se o servidor está online
-  fetch('http://localhost:5000/api/ping', { method: 'GET' })
+  fetch(`${API_CONFIG.BASE_URL}/api/ping`, { method: 'GET' })
     .then(response => {
       if (response.ok) {
         console.log('Servidor online');

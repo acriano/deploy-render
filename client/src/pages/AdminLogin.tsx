@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { API_CONFIG } from "../config";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -63,8 +64,8 @@ export default function AdminLogin() {
         setDebugInfo("Tentando conectar ao servidor...");
         console.log('Tentando fazer login com:', { email: formData.email });
 
-        // Tenta com localhost
-        const apiUrl = 'http://localhost:5000/api/auth/admin-login';
+        // Usar a configuração centralizada
+        const apiUrl = `${API_CONFIG.BASE_URL}/api/auth/admin-login`;
         setDebugInfo(`Conectando a ${apiUrl}...`);
 
         const response = await fetch(apiUrl, {

@@ -1,5 +1,6 @@
 // API Service - Comunicação com o servidor
 import { RecycleMaterial } from './localStorage';
+import { API_CONFIG } from '../config';
 
 // Função para obter o token do usuário atual
 const getAuthToken = () => {
@@ -35,8 +36,8 @@ const handleApiError = (error: any, defaultMessage: string) => {
 
 // Função base para fazer requisições à API
 async function fetchFromApi(endpoint: string, options: RequestInit = {}): Promise<any> {
-  // Usar URL padrão se VITE_API_URL não estiver definida
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  // Usar a configuração centralizada
+  const baseUrl = API_CONFIG.BASE_URL;
   const url = `${baseUrl}/api/${endpoint}`;
   
   console.log(`[API] Fazendo requisição para: ${url}`);
