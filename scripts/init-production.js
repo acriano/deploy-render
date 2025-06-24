@@ -1,9 +1,9 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from '@neondatabase/serverless';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { testConnection } from '../server/config/database.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const path = require('path');
+const { fileURLToPath } = require('url');
+const { drizzle } = require('drizzle-orm/postgres-js');
+const postgres = require('@neondatabase/serverless');
+const { migrate } = require('drizzle-orm/postgres-js/migrator');
+const { testConnection } = require('../server/config/database');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,8 +48,8 @@ async function initProduction() {
 }
 
 // Executar se chamado diretamente
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   initProduction();
 }
 
-export default initProduction; 
+module.exports = initProduction; 

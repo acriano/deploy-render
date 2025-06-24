@@ -64,24 +64,26 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
   console.log('URL da requisição:', req.url);
   console.log('Método da requisição:', req.method);
   console.log('Headers completos:', JSON.stringify(req.headers, null, 2));
-  console.log('Usuário atual:', req.user ? JSON.stringify({
-    id: req.user.id,
-    email: req.user.email,
-    role: req.user.role,
+  
+  const user = (req as any).user;
+  console.log('Usuário atual:', user ? JSON.stringify({
+    id: user.id,
+    email: user.email,
+    role: user.role,
     token: req.headers.authorization ? 'Token presente' : 'Token ausente'
   }, null, 2) : 'Usuário não definido');
 
-  if (!req.user) {
+  if (!user) {
     console.log('Usuário não autenticado');
     return res.status(401).json({ error: 'Usuário não autenticado' });
   }
 
-  console.log('Verificando role do usuário:', req.user.role);
+  console.log('Verificando role do usuário:', user.role);
   console.log('Role esperada:', 'admin');
-  console.log('Role atual:', req.user.role);
-  console.log('São iguais?', req.user.role === 'admin');
+  console.log('Role atual:', user.role);
+  console.log('São iguais?', user.role === 'admin');
 
-  if (req.user.role !== 'admin') {
+  if (user.role !== 'admin') {
     console.log('Usuário não é administrador');
     return res.status(403).json({ error: 'Acesso negado' });
   }

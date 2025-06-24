@@ -1,6 +1,7 @@
 {
   "include": [
-    "server/**/*"
+    "server/**/*",
+    "scripts/**/*"
   ],
   "exclude": [
     "node_modules",
