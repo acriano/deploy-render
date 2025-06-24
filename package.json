@@ -9,7 +9,7 @@
     "dev:client": "dotenv -e .env.development -- vite",
     "build:server": "tsc -p tsconfig.server.json && xcopy scripts dist\\scripts /E /I /Y",
     "build:server-only": "tsc --project tsconfig.server.json --skipLibCheck && xcopy scripts dist\\scripts /E /I /Y",
-    "build:backend": "tsc --project tsconfig.backend.json && xcopy scripts dist\\scripts /E /I /Y",
+    "build:backend": "tsc --project tsconfig.backend.json && cp -r scripts dist/scripts",
     "build:backend-safe": "move client client_temp && tsc --project tsconfig.backend.json && xcopy scripts dist\\scripts /E /I /Y && move client_temp client",
     "build:backend-final": "powershell -Command \"(Get-Content server/vite.ts) -replace 'const viteConfig = \\(await import\\(\"\\\\.\\./client/vite\\.config\\.mjs\"\\)\\)\\.default;', '// const viteConfig = (await import(\"../client/vite.config.mjs\")).default;' -replace '\\.\\.\\.viteConfig,', '// ...viteConfig,' | Set-Content server/vite.ts\" && move client client_temp && tsc --project tsconfig.backend.json && xcopy scripts dist\\scripts /E /I /Y && move client_temp client && powershell -Command \"(Get-Content server/vite.ts) -replace '// const viteConfig = \\(await import\\(\"\\\\.\\./client/vite\\.config\\.mjs\"\\)\\)\\.default;', 'const viteConfig = (await import(\"../client/vite.config.mjs\")).default;' -replace '// \\.\\.\\.viteConfig,', '...viteConfig,' | Set-Content server/vite.ts\"",
     "build:deploy": "cd client && npm run build && cd .. && npm run build:backend",
