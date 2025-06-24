@@ -12,7 +12,7 @@
     "build:backend": "tsc --project tsconfig.backend.json && cp -r scripts dist/scripts",
     "build:backend-safe": "move client client_temp && tsc --project tsconfig.backend.json && xcopy scripts dist\\scripts /E /I /Y && move client_temp client",
     "build:backend-final": "powershell -Command \"(Get-Content server/vite.ts) -replace 'const viteConfig = \\(await import\\(\"\\\\.\\./client/vite\\.config\\.mjs\"\\)\\)\\.default;', '// const viteConfig = (await import(\"../client/vite.config.mjs\")).default;' -replace '\\.\\.\\.viteConfig,', '// ...viteConfig,' | Set-Content server/vite.ts\" && move client client_temp && tsc --project tsconfig.backend.json && xcopy scripts dist\\scripts /E /I /Y && move client_temp client && powershell -Command \"(Get-Content server/vite.ts) -replace '// const viteConfig = \\(await import\\(\"\\\\.\\./client/vite\\.config\\.mjs\"\\)\\)\\.default;', 'const viteConfig = (await import(\"../client/vite.config.mjs\")).default;' -replace '// \\.\\.\\.viteConfig,', '...viteConfig,' | Set-Content server/vite.ts\"",
-    "build:deploy": "cd client && npm run build && cd .. && npm run build:backend",
+    "build:deploy": "cd client && npm install && npm run build && cd .. && npm run build:backend",
     "build": "npm run build:deploy",
     "start": "NODE_ENV=production node dist/server/index.js",
     "start:prod": "node scripts/init-production.cjs && npm start",
