@@ -38,7 +38,8 @@
     "drop:tables": "node drop-tables.js",
     "check:schema": "node check-sqlite-schema.js",
     "verify:migration": "node verify-migration.js",
-    "check:deploy": "node scripts/check-deploy.js"
+    "check:deploy": "node scripts/check-deploy.js",
+    "start:render": "npm run build && npm run start:prod"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
