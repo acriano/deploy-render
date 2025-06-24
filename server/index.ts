@@ -11,9 +11,10 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
-    'http://localhost:3000', 
-    'http://127.0.0.1:3000', 
-    'http://192.168.56.1:3000',
+        'https://recycleczs.onrender.com', // Frontend no Render
+        'http://localhost:3000', 
+        'http://127.0.0.1:3000', 
+        'http://192.168.56.1:3000',
         'http://192.168.1.39:3000',
         'http://192.168.20.115:3000'
       ]

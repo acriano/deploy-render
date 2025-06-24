@@ -5,7 +5,7 @@ import { users } from '../../shared/schema.js';
 import { eq } from 'drizzle-orm';
 import { JWT_SECRET } from '../config.js';
 
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   console.log('\n=== Iniciando autenticação ===');
   console.log('URL da requisição:', req.url);
   console.log('Método da requisição:', req.method);
@@ -19,7 +19,8 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
 
   if (!token) {
     console.log('Token não fornecido');
-    return res.status(401).json({ error: 'Token não fornecido' });
+    res.status(401).json({ error: 'Token não fornecido' });
+    return;
   }
 
   try {
@@ -30,36 +31,44 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
 
     console.log('Buscando usuário no banco de dados...');
     const db = getDb();
-    const user = await db.select().from(users).where(eq(users.id, decoded.id)).then(rows => rows[0]);
+    db.select().from(users).where(eq(users.id, decoded.id)).then(rows => {
+      const user = rows[0];
+      console.log('Usuário encontrado:', user ? JSON.stringify({
+        id: user.id,
+        email: user.email,
+        role: user.role
+      }, null, 2) : 'Usuário não encontrado');
 
-    console.log('Usuário encontrado:', user ? JSON.stringify({
-      id: user.id,
-      email: user.email,
-      role: user.role
-    }, null, 2) : 'Usuário não encontrado');
+      if (!user) {
+        console.log('Usuário não encontrado no banco de dados');
+        res.status(401).json({ error: 'Usuário não encontrado' });
+        return;
+      }
 
-    if (!user) {
-      console.log('Usuário não encontrado no banco de dados');
-      return res.status(401).json({ error: 'Usuário não encontrado' });
-    }
-
-    (req as any).user = user;
-    console.log('Autenticação bem-sucedida');
-    next();
+      (req as any).user = user;
+      console.log('Autenticação bem-sucedida');
+      next();
+    }).catch(error => {
+      console.error('Erro ao buscar usuário no banco de dados:', error);
+      res.status(500).json({ error: 'Erro interno de autenticação' });
+    });
   } catch (error) {
     console.error('Erro ao verificar token:', error);
     if (error instanceof jwt.TokenExpiredError) {
       console.log('Token expirado');
-      return res.status(401).json({ error: 'Token expirado' });
+      res.status(401).json({ error: 'Token expirado' });
+      return;
     } else if (error instanceof jwt.JsonWebTokenError) {
       console.log('Token inválido');
-      return res.status(401).json({ error: 'Token inválido' });
+      res.status(401).json({ error: 'Token inválido' });
+      return;
     }
-    return res.status(403).json({ error: 'Token inválido' });
+    res.status(403).json({ error: 'Token inválido' });
+    return;
   }
 };
 
-export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   console.log('\n=== Verificando permissões de administrador ===');
   console.log('URL da requisição:', req.url);
   console.log('Método da requisição:', req.method);
@@ -75,7 +84,8 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
 
   if (!user) {
     console.log('Usuário não autenticado');
-    return res.status(401).json({ error: 'Usuário não autenticado' });
+    res.status(401).json({ error: 'Usuário não autenticado' });
+    return;
   }
 
   console.log('Verificando role do usuário:', user.role);
@@ -85,7 +95,8 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
 
   if (user.role !== 'admin') {
     console.log('Usuário não é administrador');
-    return res.status(403).json({ error: 'Acesso negado' });
+    res.status(403).json({ error: 'Acesso negado' });
+    return;
   }
 
   console.log('Permissões de administrador verificadas com sucesso');

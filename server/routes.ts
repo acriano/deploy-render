@@ -129,13 +129,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint simples para teste de API
   app.get("/api/test", (req: Request, res: Response) => {
     console.log("[API] GET /api/test - Testando API");
-    return res.json({ message: "API funcionando corretamente!" });
+    res.json({ message: "API funcionando corretamente!" });
   });
 
   // Endpoint para debugar headers e configurações de CORS
   app.get("/api/debug", (req: Request, res: Response) => {
     console.log("[API] GET /api/debug - Depurando configurações da API");
-    return res.status(200)
+    res.status(200)
       .header('Content-Type', 'application/json')
       .json({
         headers: req.headers,
@@ -207,7 +207,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const point = await storage.getCollectionPoint(id);
 
       if (!point) {
-        return res.status(404).json({ error: "Ponto de coleta não encontrado" });
+        res.status(404).json({ error: "Ponto de coleta não encontrado" });
+        return;
       }
 
       // Buscar materiais aceitos deste ponto
@@ -232,9 +233,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { name, address } = req.body;
 
       if (!name || !address) {
-        return res.status(400).json({
+        res.status(400).json({
           error: "Nome e endereço são obrigatórios"
         });
+        return;
       }
 
       let latitude = req.body.latitude;
@@ -267,11 +269,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newPoint = await storage.createCollectionPoint(pointData);
       console.log("Ponto de coleta criado com sucesso:", newPoint);
 
-      return res.status(201).json(newPoint);
+      res.status(201).json(newPoint);
     } catch (error) {
       console.error("Erro detalhado ao criar ponto de coleta:", error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({
+        res.status(400).json({
           error: "Dados inválidos",
           details: error.errors
         });
@@ -289,7 +291,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Verificar se o ID é válido antes de prosseguir
     if (!req.params.id || req.params.id === 'undefined') {
-      return res.status(400).json({ error: 'ID do ponto de coleta inválido' });
+      res.status(400).json({ error: 'ID do ponto de coleta inválido' });
+      return;
     }
     
     // Create dynamic storage configuration with access to req.params.id
@@ -344,9 +347,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[UPLOAD] req.file será processado...');
       
       if (!req.file) {
-        console.error('[UPLOAD] Nenhum arquivo recebido');
-        console.log('[UPLOAD] req.file é undefined - upload falhou');
-        return res.status(400).json({ error: "Nenhuma imagem enviada" });
+        res.status(400).json({ error: "Nenhuma imagem enviada" });
+        return;
       }
       
       console.log('[UPLOAD] Detalhes do arquivo:', {
@@ -376,8 +378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar se o ponto de coleta existe
       const point = await storage.getCollectionPoint(id);
       if (!point) {
-        console.error(`[UPLOAD] Ponto de coleta ID ${id} não encontrado`);
-        return res.status(404).json({ error: "Ponto de coleta não encontrado" });
+        res.status(404).json({ error: "Ponto de coleta não encontrado" });
+        return;
       }
 
       // Criar URL relativa para a imagem
@@ -398,14 +400,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[UPLOAD] Ponto atualizado retornado:', updatedPoint);
       console.log('[UPLOAD] Ponto de coleta atualizado com sucesso:', updatedPoint);
 
-      return res.json({
-        message: "Imagem enviada com sucesso",
+      res.json({
+        message: "Imagem atualizada com sucesso",
         imageUrl: relativeImageUrl,
         point: updatedPoint
       });
     } catch (error) {
-      console.error('[UPLOAD] Erro completo:', error);
-      return res.status(500).json({ error: "Erro ao processar upload" });
+      console.error("Erro ao processar upload:", error);
+      res.status(500).json({ error: "Erro ao processar upload" });
     }
   });
 
@@ -416,10 +418,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingPoint = await storage.getCollectionPoint(parseInt(id));
 
       if (!existingPoint) {
-        return res.status(404).json({ error: 'Ponto de coleta não encontrado' });
+        res.status(404).json({ error: 'Ponto de coleta não encontrado' });
+        return;
       }
 
-      // Garantir que latitude e longitude sejam números
       let latitude = req.body.latitude !== undefined ? Number(req.body.latitude) : existingPoint.latitude;
       let longitude = req.body.longitude !== undefined ? Number(req.body.longitude) : existingPoint.longitude;
 
@@ -441,17 +443,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Dados recebidos para atualização:', req.body);
       console.log('Dados normalizados para atualização:', updatedPointData);
 
-      // Atualizar o ponto
       await updateCollectionPoint(parseInt(id), updatedPointData);
-      
-      // Buscar o ponto atualizado
       const finalUpdatedPoint = await storage.getCollectionPoint(parseInt(id));
 
       if (!finalUpdatedPoint) {
-        return res.status(500).json({ error: 'Erro ao obter o ponto de coleta atualizado após a atualização.' });
+        res.status(500).json({ error: 'Erro ao obter o ponto de coleta atualizado após a atualização.' });
+        return;
       }
 
-      res.json(finalUpdatedPoint); // Retorna o objeto do ponto de coleta atualizado
+      res.json(finalUpdatedPoint);
     } catch (error) {
       console.error('Erro ao atualizar ponto de coleta:', error);
       res.status(500).json({ 
@@ -465,27 +465,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/collection-points/:id", authenticateToken, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-
-      // Verificar se o ponto existe
       const point = await storage.getCollectionPoint(id);
       if (!point) {
-        return res.status(404).json({ error: "Ponto de coleta não encontrado" });
+        res.status(404).json({ error: "Ponto de coleta não encontrado" });
+        return;
       }
-
-      // Primeiro, excluir todos os materiais aceitos associados ao ponto
       const materials = await storage.getAcceptedMaterials(id);
-      console.log(`Excluindo ${materials.length} materiais associados ao ponto ${id}`);
-
       for (const material of materials) {
-        console.log(`Excluindo material ID ${material.id} (${material.materialType}) do ponto ${id}`);
         await storage.removeAcceptedMaterial(material.id);
       }
-
-      // Agora, excluir o ponto de coleta
       await storage.deleteCollectionPoint(id);
-      console.log(`Ponto de coleta ${id} excluído com sucesso`);
-
-      return res.status(204).send();
+      res.status(204).send();
     } catch (error) {
       console.error("Erro ao excluir ponto de coleta:", error);
       res.status(500).json({ error: "Erro ao excluir ponto de coleta" });
@@ -510,58 +500,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/materials", authenticateToken, async (req: Request, res: Response) => {
     try {
       const materialData = req.body;
-      console.log("[API] Dados do material recebidos:", materialData);
-      
-      // Validar dados obrigatórios
       if (!materialData.collectionPointId || !materialData.materialType) {
-        console.log("[API] Dados inválidos:", materialData);
-        return res.status(400).json({ 
+        res.status(400).json({ 
           error: 'Dados inválidos: collectionPointId e materialType são obrigatórios' 
         });
+        return;
       }
-
-      // Validar tipos de dados
       if (typeof materialData.collectionPointId !== 'number' || typeof materialData.materialType !== 'string') {
-        console.log("[API] Tipos de dados inválidos:", {
-          collectionPointId: typeof materialData.collectionPointId,
-          materialType: typeof materialData.materialType
-        });
-        return res.status(400).json({ 
+        res.status(400).json({ 
           error: 'Tipos de dados inválidos: collectionPointId deve ser número e materialType deve ser string' 
         });
+        return;
       }
-
-      // Verificar se o ponto de coleta existe
       const pointExists = await storage.getCollectionPoint(materialData.collectionPointId);
       if (!pointExists) {
-        console.log("[API] Ponto de coleta não encontrado:", materialData.collectionPointId);
-        return res.status(404).json({ 
-          error: 'Ponto de coleta não encontrado' 
-        });
+        res.status(404).json({ error: 'Ponto de coleta não encontrado' });
+        return;
       }
-      
-      const newMaterial = await storage.addAcceptedMaterial({
-        collectionPointId: materialData.collectionPointId,
-        materialType: materialData.materialType,
-        description: materialData.description || null
-      });
-      
-      console.log("[API] Material processado com sucesso:", newMaterial);
+      const newMaterial = await storage.addAcceptedMaterial(materialData);
       res.status(201).json(newMaterial);
     } catch (error) {
-      console.error("[API] Erro ao processar material:", error);
-      
-      // Verificar se é erro de constraint de unicidade
-      if (error instanceof Error && 'code' in error && error.code === '23505') {
-        return res.status(409).json({ 
-          error: 'Este material já está associado a este ponto de coleta' 
-        });
-      }
-      
-      res.status(500).json({ 
-        error: 'Erro ao processar material',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
-      });
+      console.error("Erro ao adicionar material:", error);
+      res.status(500).json({ error: "Erro ao adicionar material" });
     }
   });
 
@@ -569,34 +529,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/materials/check", authenticateToken, async (req: Request, res: Response) => {
     try {
       const { collectionPointId, materialType } = req.body;
-      console.log("[API] Verificando material:", { collectionPointId, materialType });
-
       if (!collectionPointId || !materialType) {
-        console.log("[API] Dados inválidos:", { collectionPointId, materialType });
-        return res.status(400).json({ 
-          error: "collectionPointId e materialType são obrigatórios" 
-        });
+        res.status(400).json({ error: "collectionPointId e materialType são obrigatórios" });
+        return;
       }
-
-      // Verificar se o ponto de coleta existe
       const pointExists = await storage.getCollectionPoint(collectionPointId);
       if (!pointExists) {
-        console.log("[API] Ponto de coleta não encontrado:", collectionPointId);
-        return res.status(404).json({ 
-          error: 'Ponto de coleta não encontrado' 
-        });
+        res.status(404).json({ error: 'Ponto de coleta não encontrado' });
+        return;
       }
-
       const exists = await storage.checkMaterialExists(collectionPointId, materialType);
-      console.log("[API] Resultado da verificação:", { exists });
-      
       res.json({ exists });
     } catch (error) {
-      console.error("[API] Erro ao verificar material:", error);
-      res.status(500).json({ 
-        error: "Erro ao verificar material",
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
-      });
+      console.error("Erro ao verificar material:", error);
+      res.status(500).json({ error: "Erro ao verificar material" });
     }
   });
 
@@ -642,19 +588,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Atualizar o status de um agendamento
-  app.patch("/api/schedules/:id/status", async (req: Request, res: Response) => {
+  app.patch("/api/schedules/:id/status", async (req: Request, res: Response): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
       const { status } = req.body;
 
       if (!status || !["agendada", "em_andamento", "concluída", "cancelada"].includes(status)) {
-        return res.status(400).json({ error: "Status inválido" });
+        res.status(400).json({ error: "Status inválido" });
+        return;
       }
 
       const updatedSchedule = await storage.updateScheduleStatus(id, status);
 
       if (!updatedSchedule) {
-        return res.status(404).json({ error: "Agendamento não encontrado" });
+        res.status(404).json({ error: "Agendamento não encontrado" });
+        return;
       }
 
       res.json(updatedSchedule);
@@ -729,100 +677,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = req.body;
 
-      console.log('Tentativa de login:', { email, password: password ? '***' : undefined });
-
       if (!email || !password) {
-        console.log('Email ou senha não fornecidos');
-        return res.status(400).json({ error: "Email e senha são obrigatórios" });
+        res.status(400).json({ error: "Email e senha são obrigatórios" });
+        return;
       }
 
-      // Buscar usuário pelo email
-      console.log('Buscando usuário no banco de dados...');
+      console.log('Tentativa de login para:', email);
+
       const user = await storage.getUserByEmail(email);
-
-      console.log('Usuário encontrado:', user ? {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        password: user.password ? '***' : undefined
-      } : 'Usuário não encontrado');
-
       if (!user) {
-        console.log('Usuário não encontrado no banco de dados');
-        return res.status(401).json({ error: "Email ou senha incorretos" });
+        console.log('Usuário não encontrado:', email);
+        res.status(401).json({ error: "Email ou senha incorretos" });
+        return;
       }
 
-      // Verificar senha usando bcrypt
-      console.log('Verificando senha...');
-      console.log('Senha fornecida:', password ? '***' : undefined);
-      console.log('Hash armazenado:', user.password ? '***' : undefined);
-      const isPasswordValid = await comparePassword(password, user.password);
-      console.log('Resultado da verificação de senha:', isPasswordValid);
-
-      if (!isPasswordValid) {
-        console.log('Senha inválida');
-        return res.status(401).json({ error: "Email ou senha incorretos" });
-      }
-
-      // Remover senha da resposta
-      const { password: _, ...userWithoutPassword } = user;
-      console.log('Login bem sucedido para usuário:', {
-        id: userWithoutPassword.id,
-        email: userWithoutPassword.email,
-        username: userWithoutPassword.username
-      });
-      res.json(userWithoutPassword);
-    } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      res.status(500).json({ error: "Erro ao fazer login" });
-    }
-  });
-
-  // Login exclusivo para administradores
-  app.post("/api/auth/admin-login", async (req: Request, res: Response) => {
-    try {
-      const { email, password } = req.body;
-
-      console.log('Tentativa de login de administrador:', { email, password: password ? '***' : undefined });
-
-      if (!email || !password) {
-        console.log('Email ou senha não fornecidos');
-        return res.status(400).json({ error: "Email e senha são obrigatórios" });
-      }
-
-      // Buscar usuário pelo email
-      console.log('Buscando usuário administrador no banco de dados...');
-      const user = await storage.getUserByEmail(email);
-
-      console.log('Usuário encontrado:', user ? {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        password: user.password ? '***' : undefined
-      } : 'Usuário não encontrado');
-
-      if (!user) {
-        console.log('Usuário não encontrado no banco de dados');
-        return res.status(401).json({ error: "Email ou senha incorretos" });
-      }
-
-      // Verificar se o usuário é um administrador
-      if (user.role !== 'admin') {
-        console.log('Usuário não é administrador:', user.role);
-        return res.status(403).json({ error: "Acesso negado. Você não possui permissões de administrador." });
-      }
-
-      // Verificar senha usando bcrypt
-      console.log('Verificando senha...');
-      console.log('Senha fornecida:', password ? '***' : undefined);
-      console.log('Hash armazenado:', user.password ? '***' : undefined);
-      const isPasswordValid = await comparePassword(password, user.password);
-      console.log('Resultado da verificação de senha:', isPasswordValid);
-
-      if (!isPasswordValid) {
-        console.log('Senha inválida');
-        return res.status(401).json({ error: "Email ou senha incorretos" });
+      const isValidPassword = await comparePassword(password, user.password);
+      if (!isValidPassword) {
+        console.log('Senha incorreta para:', email);
+        res.status(401).json({ error: "Email ou senha incorretos" });
+        return;
       }
 
       // Gerar token JWT
@@ -832,18 +705,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { expiresIn: '24h' }
       );
 
-      // Remover senha da resposta
-      const { password: _, ...userWithoutPassword } = user;
-      console.log('Login bem sucedido para administrador:', {
-        id: userWithoutPassword.id,
-        email: userWithoutPassword.email,
-        username: userWithoutPassword.username,
-        role: userWithoutPassword.role
+      console.log('Login bem-sucedido para:', email);
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        token
       });
-      res.json({ ...userWithoutPassword, token });
     } catch (error) {
-      console.error("Erro ao fazer login de administrador:", error);
-      res.status(500).json({ error: "Erro ao fazer login" });
+      console.error('Erro no login:', error);
+      res.status(401).json({ error: "Email ou senha incorretos" });
+    }
+  });
+
+  // Login de administrador
+  app.post("/api/auth/admin-login", async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        res.status(400).json({ error: "Email e senha são obrigatórios" });
+        return;
+      }
+
+      console.log('Tentativa de login de admin para:', email);
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        console.log('Usuário não encontrado:', email);
+        res.status(401).json({ error: "Email ou senha incorretos" });
+        return;
+      }
+
+      const isValidPassword = await comparePassword(password, user.password);
+      if (!isValidPassword) {
+        console.log('Senha incorreta para:', email);
+        res.status(401).json({ error: "Email ou senha incorretos" });
+        return;
+      }
+
+      // Verificar se é administrador
+      if (user.role !== 'admin') {
+        console.log('Usuário não é admin:', email);
+        res.status(403).json({ error: "Acesso negado. Você não possui permissões de administrador." });
+        return;
+      }
+
+      // Gerar token JWT
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      console.log('Login de admin bem-sucedido para:', email);
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        token
+      });
+    } catch (error) {
+      console.error('Erro no login de admin:', error);
+      res.status(401).json({ error: "Email ou senha incorretos" });
     }
   });
 
@@ -851,7 +781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/users",
     validateBody(insertUserSchema),
-    async (req: Request, res: Response) => {
+    async (req: Request, res: Response): Promise<void> => {
       try {
         console.log('Tentando criar usuário com dados:', {
           username: req.body.username,
@@ -865,14 +795,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const existingUser = await storage.getUserByUsername(req.body.username);
         if (existingUser) {
           console.log('Usuário já existe:', existingUser);
-          return res.status(409).json({ error: "Nome de usuário já existe" });
+          res.status(409).json({ error: "Nome de usuário já existe" });
+          return;
         }
 
         // Verificar se email já existe
         const existingEmail = await storage.getUserByEmail(req.body.email);
         if (existingEmail) {
           console.log('Email já existe:', existingEmail);
-          return res.status(409).json({ error: "Email já cadastrado" });
+          res.status(409).json({ error: "Email já cadastrado" });
+          return;
         }
 
         // Hash da senha antes de salvar
@@ -930,311 +862,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
   console.log('Diretórios de uploads disponíveis:');
   console.log('- uploadsDir: ', uploadsDir);
   console.log('- collectionPointsImagesDir: ', collectionPointsImagesDir);
 
-  // === API de Materiais Recicláveis ===
-  
-  // Listar todos os materiais recicláveis
-  app.get("/api/recycle-materials", async (req: Request, res: Response) => {
-    try {
-      console.log("[API] Listando todos os materiais recicláveis");
-      
-      const materials = await querySql(`
-        SELECT * FROM recycle_materials
-        ORDER BY name ASC
-      `);
-      
-      // Log detalhado para depuração
-      console.log('[API][DEBUG] Materiais recebidos do banco:', JSON.stringify(materials, null, 2));
-      
-      if (!materials || materials.length === 0) {
-        return res.status(200)
-          .header('Content-Type', 'application/json')
-          .json([]);
-      }
-      
-      // Converter os itens para o formato correto
-      const formattedMaterials = materials.map((material: RecycleMaterialFromDB) => {
-        try {
-          // Se os campos são arrays do PostgreSQL, convertê-los para strings JSON primeiro
-          const recyclableItems = Array.isArray(material.recyclable_items) 
-            ? material.recyclable_items 
-            : JSON.parse(material.recyclable_items || '[]');
-          
-          const nonRecyclableItems = Array.isArray(material.non_recyclable_items)
-            ? material.non_recyclable_items
-            : JSON.parse(material.non_recyclable_items || '[]');
-
-          // Se os campos são strings JSON, fazer o parse
-          const recyclable = typeof recyclableItems === 'string' 
-            ? JSON.parse(recyclableItems) 
-            : recyclableItems;
-
-          const nonRecyclable = typeof nonRecyclableItems === 'string'
-            ? JSON.parse(nonRecyclableItems)
-            : nonRecyclableItems;
-
-          return {
-            id: material.id,
-            name: material.name,
-            description: material.description,
-            color: material.color || "#6CB33F",
-            youtubeUrl: material.youtube_url || "",
-            items: {
-              recyclable,
-              nonRecyclable,
-              howToPrepare: material.how_to_prepare || ""
-            },
-            createdAt: material.created_at,
-            updatedAt: material.updated_at
-          };
-        } catch (error) {
-          console.error(`[API] Erro ao processar material ${material.id}:`, error);
-          return null;
-        }
-      }).filter(Boolean);
-      
-      return res.status(200)
-        .header('Content-Type', 'application/json')
-        .json(formattedMaterials);
-    } catch (error) {
-      console.error("[API] Erro ao listar materiais recicláveis:", error);
-      return res.status(500)
-        .header('Content-Type', 'application/json')
-        .json({ error: "Erro ao listar materiais recicláveis" });
-    }
-  });
-
-  // Obter um material reciclável específico
-  app.get("/api/recycle-materials/:id", async (req: Request, res: Response) => {
-    try {
-      const id = req.params.id;
-      console.log(`[API] Buscando material reciclável com ID: ${id}`);
-      
-      const material = await querySql(`
-        SELECT * FROM recycle_materials
-        WHERE id = $1
-      `, [id]);
-      
-      if (!material || material.length === 0) {
-        return res.status(404)
-          .header('Content-Type', 'application/json')
-          .json({ error: "Material não encontrado" });
-      }
-      
-      try {
-        const formattedMaterial = {
-          id: material[0].id,
-          name: material[0].name,
-          description: material[0].description,
-          color: material[0].color || "#6CB33F",
-          youtubeUrl: material[0].youtube_url || "",
-          items: {
-            recyclable: JSON.parse(material[0].recyclable_items || '[]'),
-            nonRecyclable: JSON.parse(material[0].non_recyclable_items || '[]'),
-            howToPrepare: material[0].how_to_prepare || ""
-          },
-          createdAt: material[0].created_at,
-          updatedAt: material[0].updated_at
-        };
-        
-        return res.status(200)
-          .header('Content-Type', 'application/json')
-          .json(formattedMaterial);
-      } catch (error) {
-        console.error(`[API] Erro ao processar material ${id}:`, error);
-        return res.status(500)
-          .header('Content-Type', 'application/json')
-          .json({ error: "Erro ao processar material" });
-      }
-    } catch (error) {
-      console.error(`[API] Erro ao buscar material ${req.params.id}:`, error);
-      return res.status(500)
-        .header('Content-Type', 'application/json')
-        .json({ error: "Erro ao buscar material" });
-    }
-  });
-
-  // Criar um novo material reciclável
-  app.post("/api/recycle-materials", async (req: Request, res: Response) => {
-    try {
-      const { id, name, description, items } = req.body;
-      
-      if (!id || !name || !description) {
-        return res.status(400)
-          .header('Content-Type', 'application/json')
-          .json({ error: "Campos obrigatórios: id, name, description" });
-      }
-      
-      console.log("[API] Criando novo material reciclável:", { id, name });
-      
-      // Verificar se já existe um material com esse ID
-      const existingMaterial = await querySql(`
-        SELECT id FROM recycle_materials WHERE id = $1
-      `, [id]);
-      
-      if (existingMaterial && existingMaterial.length > 0) {
-        return res.status(409)
-          .header('Content-Type', 'application/json')
-          .json({ error: "Já existe um material com esse ID" });
-      }
-      
-      // Inserir o novo material
-      await querySql(`
-        INSERT INTO recycle_materials (
-          id, name, description, color, youtube_url, 
-          recyclable_items, non_recyclable_items, how_to_prepare, 
-          created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `, [
-        id,
-        name,
-        description,
-        req.body.color || "#6CB33F",
-        req.body.youtubeUrl || "",
-        JSON.stringify(items.recyclable || []),
-        JSON.stringify(items.nonRecyclable || []),
-        items.howToPrepare || ""
-      ]);
-      
-      // Retornar o material criado
-      const newMaterial = {
-        id,
-        name,
-        description,
-        color: req.body.color || "#6CB33F",
-        youtubeUrl: req.body.youtubeUrl || "",
-        items: {
-          recyclable: items.recyclable || [],
-          nonRecyclable: items.nonRecyclable || [],
-          howToPrepare: items.howToPrepare || ""
-        }
-      };
-      
-      console.log("[API] Material reciclável criado com sucesso:", newMaterial);
-      return res.status(201)
-        .header('Content-Type', 'application/json')
-        .json(newMaterial);
-    } catch (error) {
-      console.error("[API] Erro ao criar material reciclável:", error);
-      return res.status(500)
-        .header('Content-Type', 'application/json')
-        .json({ error: "Erro ao criar material reciclável" });
-    }
-  });
-
-  // Atualizar um material reciclável
-  app.put("/api/recycle-materials/:id", async (req: Request, res: Response) => {
-    try {
-      const id = req.params.id;
-      console.log(`[API] Atualizando material reciclável com ID: ${id}`, req.body);
-      
-      // Verificar se o material existe
-      const existingMaterial = await querySql(`
-        SELECT id FROM recycle_materials WHERE id = $1
-      `, [id]);
-      
-      if (!existingMaterial || existingMaterial.length === 0) {
-        return res.status(404)
-          .header('Content-Type', 'application/json')
-          .json({ error: "Material não encontrado" });
-      }
-      
-      const { name, description, items } = req.body;
-      
-      if (!name || !description) {
-        return res.status(400)
-          .header('Content-Type', 'application/json')
-          .json({ error: "Campos obrigatórios: name, description" });
-      }
-      
-      // Atualizar o material
-      await querySql(`
-        UPDATE recycle_materials SET
-          name = $1,
-          description = $2,
-          color = $3,
-          youtube_url = $4,
-          recyclable_items = $5,
-          non_recyclable_items = $6,
-          how_to_prepare = $7,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = $8
-      `, [
-        name,
-        description,
-        req.body.color || "#6CB33F",
-        req.body.youtubeUrl || "",
-        JSON.stringify(items.recyclable || []),
-        JSON.stringify(items.nonRecyclable || []),
-        items.howToPrepare || "",
-        id
-      ]);
-      
-      // Retornar o material atualizado
-      const updatedMaterial = {
-        id,
-        name,
-        description,
-        color: req.body.color || "#6CB33F",
-        youtubeUrl: req.body.youtubeUrl || "",
-        items: {
-          recyclable: items.recyclable || [],
-          nonRecyclable: items.nonRecyclable || [],
-          howToPrepare: items.howToPrepare || ""
-        }
-      };
-      
-      console.log("[API] Material reciclável atualizado com sucesso:", updatedMaterial);
-      return res.status(200)
-        .header('Content-Type', 'application/json')
-        .json(updatedMaterial);
-    } catch (error) {
-      console.error(`[API] Erro ao atualizar material ${req.params.id}:`, error);
-      return res.status(500)
-        .header('Content-Type', 'application/json')
-        .json({ error: "Erro ao atualizar material reciclável" });
-    }
-  });
-
-  // Excluir um material reciclável
-  app.delete("/api/recycle-materials/:id", async (req: Request, res: Response) => {
-    try {
-      const id = req.params.id;
-      console.log(`[API] Excluindo material reciclável com ID: ${id}`);
-      
-      // Verificar se o material existe
-      const existingMaterial = await querySql(`
-        SELECT id FROM recycle_materials WHERE id = $1
-      `, [id]);
-      
-      if (!existingMaterial || existingMaterial.length === 0) {
-        return res.status(404)
-          .header('Content-Type', 'application/json')
-          .json({ error: "Material não encontrado" });
-      }
-      
-      // Excluir o material
-      await querySql(`
-        DELETE FROM recycle_materials
-        WHERE id = $1
-      `, [id]);
-      
-      console.log(`[API] Material reciclável ${id} excluído com sucesso`);
-      return res.status(200)
-        .header('Content-Type', 'application/json')
-        .json({ success: true, message: "Material excluído com sucesso" });
-    } catch (error) {
-      console.error(`[API] Erro ao excluir material ${req.params.id}:`, error);
-      return res.status(500)
-        .header('Content-Type', 'application/json')
-        .json({ error: "Erro ao excluir material" });
-    }
-  });
+  // TODO: Implementar rotas de RecycleMaterial quando os métodos correspondentes forem adicionados ao DatabaseStorage
 
   const httpServer = createServer(app);
 
