@@ -1,7 +1,7 @@
 // Configuração da API
 export const API_CONFIG = {
   // URL base da API - usar a URL do Render em produção
-  BASE_URL: import.meta.env.VITE_API_URL || 'https://deploy-render.onrender.com',
+  BASE_URL: 'https://recyclecs-backend.onrender.com',
   
   // Endpoints
   ENDPOINTS: {
