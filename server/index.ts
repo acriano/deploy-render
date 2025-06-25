@@ -17,22 +17,6 @@ const allowedOrigins = [
   'http://192.168.20.115:3000'
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir sem origin para requests do próprio servidor (ex: health checks)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'), false);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-// Middleware manual para garantir headers CORS em todas as respostas
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && allowedOrigins.includes(origin)) {
@@ -42,8 +26,7 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
   }
   if (req.method === 'OPTIONS') {
-    res.sendStatus(204); // 204 é o padrão para preflight
-    return;
+    return res.sendStatus(204);
   }
   next();
 });
