@@ -163,6 +163,7 @@ export default function Register2() {
 
       // Buscar o endereço usando a API ViaCEP
       const response = await fetch(`https://viacep.com.br/ws/${numericCep}/json/`);
+      if (!response.ok) throw new Error('Erro ao buscar CEP');
       const data = await response.json();
 
       if (data.erro) {
@@ -178,8 +179,11 @@ export default function Register2() {
         ...prev,
         address: data.logradouro ? `${data.logradouro}, ${data.bairro}, ${data.localidade}-${data.uf}` : ""
       }));
-
     } catch (error) {
+      setErrors(prev => ({
+        ...prev,
+        cep: "Não foi possível buscar o endereço. Preencha manualmente."
+      }));
       console.error("Erro ao buscar CEP:", error);
     }
   };
