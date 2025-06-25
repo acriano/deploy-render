@@ -5,10 +5,7 @@ const urlsToCache = [
   '/index.html',
   '/favicon.svg',
   '/manifest.json',
-  // Adicionar mais recursos importantes para o aplicativo
-  '/src/main.tsx',
-  '/src/App.tsx',
-  '/src/index.css'
+  // Adicione aqui outros arquivos que realmente existem em public ou no build final
 ];
 
 // Instalação do service worker
