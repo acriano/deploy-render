@@ -8,21 +8,46 @@ const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
 
 // Configurar CORS
+const allowedOrigins = [
+  'https://recycleczs.onrender.com', // Frontend no Render
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://192.168.56.1:3000',
+  'http://192.168.1.39:3000',
+  'http://192.168.20.115:3000'
+];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://recycleczs.onrender.com', // Frontend no Render
-        'http://localhost:3000', 
-        'http://127.0.0.1:3000', 
-        'http://192.168.56.1:3000',
-        'http://192.168.1.39:3000',
-        'http://192.168.20.115:3000'
-      ]
-    : true, // Em desenvolvimento, permite todas as origens
+  origin: function (origin, callback) {
+    // Permitir sem origin para requests do próprio servidor (ex: health checks)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Middleware manual para garantir headers CORS em todas as respostas
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  }
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+
 app.use(express.json());
 
 // Criar diretórios necessários para uploads
