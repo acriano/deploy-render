@@ -111,17 +111,3 @@ self.addEventListener('push', event => {
     self.registration.showNotification(title, options)
   );
 });
-
-// Substituir a linha problemática por esta verificação
-// Substituir a seção problemática no final do arquivo
-// Verificar se chrome existe antes de usar
-if (typeof chrome !== 'undefined' && chrome.runtime) {
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "doSomethingAsync") {
-      performAsyncTask().then(result => {
-        // sendResponse(result);
-      });
-      return true; // Indica que a resposta será assíncrona
-    }
-  });
-}

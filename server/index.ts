@@ -45,6 +45,18 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   res.status(err.status || 500).json({ error: err.message || 'Erro interno do servidor' });
 });
 
+// Middleware para rotas não encontradas (404) com headers CORS
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  }
+  res.status(404).json({ error: 'Rota não encontrada' });
+});
+
 // Criar diretórios necessários para uploads
 const uploadsPath = path.join(process.cwd(), 'uploads');
 const collectionPointsPath = path.join(uploadsPath, 'collection-points');
