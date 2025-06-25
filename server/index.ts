@@ -130,8 +130,9 @@ async function killProcessOnPort(port: number) {
   }
 }
 
-// Configurar rotas
+console.log('Chamando registerRoutes...');
 registerRoutes(app).then(() => {
+  console.log('Rotas registradas com sucesso!');
   // Iniciar o servidor
   const server = app.listen(port, () => {
     console.log(`[Server] Servidor rodando na porta ${port}`);
