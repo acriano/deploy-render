@@ -42,13 +42,25 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
   }
   if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
+    res.sendStatus(204); // 204 é o padrão para preflight
     return;
   }
   next();
 });
 
 app.use(express.json());
+
+// Middleware global de erro para garantir headers CORS mesmo em erros
+app.use((err, req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  }
+  res.status(err.status || 500).json({ error: err.message || 'Erro interno do servidor' });
+});
 
 // Criar diretórios necessários para uploads
 const uploadsPath = path.join(process.cwd(), 'uploads');
